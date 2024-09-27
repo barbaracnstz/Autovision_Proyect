@@ -1,0 +1,8 @@
+path: \\?\C:\Proyecto_Detector_Patentes\train\
+
+train: C:\\Proyecto_Detector_Patentes\train\images
+val: C:\Proyecto_Detector_Patentes\valid\images
+test: C:\Proyecto_Detector_Patentes\test\images
+
+nc: 1
+names: ['patente']

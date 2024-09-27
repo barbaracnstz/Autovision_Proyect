@@ -1,0 +1,15 @@
+pip install torch torchvision torchaudio
+pip install labelme
+pip install ultralytics
+yolo task=detect mode=train epochs=150 data=data.yaml model=yolov8m.pt imgsz=640 batch=6    
+yolo task=detect mode=train epochs=300 data=data.yaml model=yolov8m.pt imgsz=640 batch=6    
+pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+pip install scikit-image
+pip install filterpy
+pip install easyocr
+pip install lap
+pip install opencv-python-headless
+pip install lapx
+pip install fuzzywuzzy
+pip install python-Levenshtein
+pip install task
