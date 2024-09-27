@@ -23,6 +23,8 @@ conexion_db = psycopg2.connect(
 cursor_db = conexion_db.cursor()
 
 # Diccionario para almacenar resultados
+# Diccionario para almacenar resultados
+# Diccionario para almacenar resultados
 resultados = {}
 
 # Inicializar objeto de seguimiento con Sort
