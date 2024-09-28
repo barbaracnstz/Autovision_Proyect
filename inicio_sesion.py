@@ -2,6 +2,10 @@ import tkinter as tk
 from tkinter import ttk
 from PIL import Image, ImageTk
 
+# Botón de "Iniciar Sesión"
+iniciar_sesion_button = tk.Button(header_frame, text="Iniciar Sesión", font=('Arial', 16), bg='#87CEEB', padx=10, pady=5, command=lambda: abrir_inicio_sesion(root))
+iniciar_sesion_button.place(x=20, y=20)
+
 # Crear la ventana principal
 root = tk.Tk()
 root.title("Autovision - Inicio de Sesión")

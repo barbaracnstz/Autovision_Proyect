@@ -1,13 +1,13 @@
 # Importar las librerías
+import re
+from datetime import datetime
 from ultralytics import YOLO
 import cv2
 import numpy as np
+import pytesseract
+import psycopg2
 from sort.sort import *
 from util import obtener_auto, leer_patente, crear_csv  # Asegúrate de que estas funciones estén correctamente definidas
-import pytesseract
-import re
-from datetime import datetime
-import psycopg2
 from fuzzywuzzy import fuzz
 
 # Ruta de Tesseract en tu sistema (ajustar según corresponda)
@@ -18,7 +18,7 @@ conexion_db = psycopg2.connect(
     host="localhost",
     database="autovision",
     user="postgres",
-    password="holanda123."
+    password="1234"
 )
 cursor_db = conexion_db.cursor()
 

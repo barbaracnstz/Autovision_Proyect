@@ -1,6 +1,8 @@
 import csv
 import pytesseract
 import re
+import os
+import sys
 
 def crear_csv(resultados, output_path):
     """
@@ -148,4 +150,26 @@ def leer_patente(recorte_patente):
     except Exception as e:
         print(f"Error leyendo la patente: {e}")
         return None, 0
+    
+#######################################################
+
+# Inicio de sesion
+from bd import conectar
+
+def validar_login(rut_admin, contrasena_admin):
+    conexion = conectar()
+    if conexion:
+        cursor = conexion.cursor()
+        # Consulta hacia la tabla del administrador
+        query = "SELECT * FROM administrador WHERE rut_admin = %s AND contrasena_admin = %s"
+        cursor.execute(query, (rut_admin, contrasena_admin))
+        resultado = cursor.fetchone()
+        conexion.close()
+        
+        # Verificamos si se encontró un resultado (es decir, un administrador válido)
+        if resultado:
+            return True
+        else:
+            return False
+    return False
 
