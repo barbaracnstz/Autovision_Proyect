@@ -47,22 +47,27 @@ def editar_residente(rut_residente, nuevo_telefono, nuevo_nro_depto, nueva_paten
     conexion = conectar()
     if conexion:
         cursor = conexion.cursor()
+
+        # Actualizar datos en la tabla residente
         query_residente = """
         UPDATE residente 
         SET telefono_residente = %s, no_depto_residente = %s 
         WHERE rut_residente = %s;
         """
         cursor.execute(query_residente, (nuevo_telefono, nuevo_nro_depto, rut_residente))
-        
+
+        # Actualizar patente en la tabla vehiculo
         query_vehiculo = """
         UPDATE vehiculo 
         SET patente_vehiculo = %s 
-        WHERE rut_residente = %s;
+        WHERE residente_rut_residente = %s;
         """
         cursor.execute(query_vehiculo, (nueva_patente, rut_residente))
-        
+
+        # Guardar cambios y cerrar conexión
         conexion.commit()
         conexion.close()
+
 
 # Eliminar un residente
 def eliminar_residente(rut_residente):
