@@ -31,7 +31,7 @@ login_frame = tk.Frame(root, bg='black')
 login_frame.pack(fill='both', expand=True)
 
 # Texto de "INICIO DE SESIÓN" centrado
-inicio_label = tk.Label(header_frame, text="INICIO DE SESIÓN", font=('Arial', 24), bg='white')
+inicio_label = tk.Label(header_frame, text="Inicio de", font=('Arial', 24), bg='white')
 inicio_label.place(relx=0.5, rely=0.5, anchor='center')  # Centrar el texto de inicio de sesión
 
 # Etiquetas y campos de texto para el login centrados
