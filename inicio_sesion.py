@@ -2,6 +2,14 @@ import tkinter as tk
 from tkinter import ttk
 from PIL import Image, ImageTk
 
+# Crear la ventana principal
+root = tk.Tk()
+root.title("Aplicación")
+
+# Definir el marco para el encabezado
+header_frame = tk.Frame(root)
+header_frame.pack(pady=10)  # Se agrega un margen vertical
+
 # Botón de "Iniciar Sesión"
 iniciar_sesion_button = tk.Button(header_frame, text="Iniciar Sesión", font=('Arial', 16), bg='#87CEEB', padx=10, pady=5, command=lambda: abrir_inicio_sesion(root))
 iniciar_sesion_button.place(x=20, y=20)
@@ -27,15 +35,15 @@ login_frame = tk.Frame(root, bg='black')
 login_frame.pack(fill='both', expand=True)
 
 # Cargar y mostrar el logo de Autovision centrado
-image_path = "AUTOVISION.jpg"  # Asegúrate de que esta ruta sea correcta
-try:
-    logo_img = Image.open(image_path)
-    logo_img = logo_img.resize((200, 200), Image.Resampling.LANCZOS)
-    logo_photo = ImageTk.PhotoImage(logo_img)
-    logo_label = tk.Label(header_frame, image=logo_photo, bg='white')
-    logo_label.place(relx=0.5, rely=0.3, anchor='center')  # Centrar el logo en la parte superior
-except FileNotFoundError:
-    print(f"Error: No se pudo abrir la imagen en {image_path}. Verifica la ruta.")
+# image_path = "AUTOVISION.jpg"  # Asegúrate de que esta ruta sea correcta
+# try:
+#     logo_img = Image.open(image_path)
+#     logo_img = logo_img.resize((200, 200), Image.Resampling.LANCZOS)
+#     logo_photo = ImageTk.PhotoImage(logo_img)
+#     logo_label = tk.Label(header_frame, image=logo_photo, bg='white')
+#     logo_label.place(relx=0.5, rely=0.3, anchor='center')  # Centrar el logo en la parte superior
+# except FileNotFoundError:
+#     print(f"Error: No se pudo abrir la imagen en {image_path}. Verifica la ruta.")
 
 # Texto de "INICIO DE SESIÓN" centrado
 inicio_label = tk.Label(header_frame, text="INICIO DE SESIÓN", font=('Arial', 24), bg='white')

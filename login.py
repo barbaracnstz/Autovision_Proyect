@@ -15,7 +15,7 @@ alto_ventana = ventana_login.winfo_screenheight()
 ventana_login.geometry(f"{ancho_ventana}x{alto_ventana}+0+0")
 
 # Widgets de la ventana de login
-etiqueta_usuario = tk.Label(ventana_login, text="Usuario:")
+etiqueta_usuario = tk.Label(ventana_login, text="Rut Usuario:")
 etiqueta_usuario.pack()
 
 entrada_usuario = tk.Entry(ventana_login)
