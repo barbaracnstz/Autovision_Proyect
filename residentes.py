@@ -165,4 +165,4 @@ def abrir_ventana_residentes():
         import inicio_sesion  # Dirige a la página de inicio de sesión
 
     # Botón de cerrar sesión
-    ttk.Button(ventana_residentes, text="Cerrar Sesión", command=cerrar_sesion).grid(row=2, column=3, padx=10, pady=10)
+    ttk.Button(ventana_residentes, text="Cerrar Sesión", command=cerrar_sesion).grid(row=2, column=2, padx=10, pady=10)
