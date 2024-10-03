@@ -7,7 +7,7 @@ def conectar():
             host="localhost",
             database="autovision",
             user="postgres",
-            password="1234"
+            password="root"
         )
         return conexion_db
     except Exception as e:
