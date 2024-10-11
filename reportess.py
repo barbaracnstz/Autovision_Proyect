@@ -1,7 +1,7 @@
 import psycopg2
 from tkinter import Tk, Label, Button, Radiobutton, StringVar, END
 from tkcalendar import DateEntry
-from tkinter import ttk
+from tkinter import ttk, filedialog
 from datetime import datetime
 from openpyxl import Workbook
 
@@ -135,6 +135,13 @@ def configurar_columnas_residentes():
 
 # 9. Función para generar el archivo Excel con la tabla de reportes
 def generar_excel():
+    # Abre el diálogo para seleccionar la ubicación y el nombre del archivo
+    excel_file = filedialog.asksaveasfilename(defaultextension=".xlsx",
+                                                filetypes=[("Excel files", "*.xlsx"),
+                                                           ("All files", "*.*")])
+    if not excel_file:  # Si el usuario cancela, no hacer nada
+        return
+
     workbook = Workbook()
     sheet = workbook.active
     sheet.title = "Reporte"
@@ -153,7 +160,6 @@ def generar_excel():
         sheet.append(values)
 
     # Guardar el archivo Excel
-    excel_file = "reporte.xlsx"
     workbook.save(excel_file)
     print(f"Excel generado: {excel_file}")
 
