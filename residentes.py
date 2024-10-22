@@ -2,6 +2,8 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from PIL import Image, ImageTk
 from bd import obtener_residentes, editar_residente, eliminar_residente, agregar_residente
+from reportes import abrir_ventana_reportes  # Importar la función del archivo reportes.py
+
 
 def abrir_ventana_residentes():
     ventana_residentes = tk.Toplevel()
@@ -162,6 +164,13 @@ def abrir_ventana_residentes():
     ttk.Button(ventana_residentes, text="Editar", command=editar_residente_callback).grid(row=2, column=0, padx=10, pady=10)
     ttk.Button(ventana_residentes, text="Eliminar", command=eliminar_residente_callback).grid(row=2, column=1, padx=10, pady=10)
     ttk.Button(ventana_residentes, text="Agregar Residente", command=abrir_ventana_agregar).grid(row=2, column=2, padx=10, pady=10)
+    ttk.Button(ventana_residentes, text="Reportes", command=abrir_ventana_reportes).grid(row=2, column=6, padx=10, pady=10)
+    
+    # Función para cerrar sesión
+    def cerrar_sesion():
+        ventana_residentes.destroy()
+        import reportes  # Dirige a la página de inicio de sesión
+
 
     # Función para cerrar sesión
     def cerrar_sesion():
@@ -169,4 +178,4 @@ def abrir_ventana_residentes():
         import inicio_sesion  # Dirige a la página de inicio de sesión
 
     # Botón de cerrar sesión
-    ttk.Button(ventana_residentes, text="Cerrar Sesión", command=cerrar_sesion).grid(row=2, column=2, padx=10, pady=10)
+    ttk.Button(ventana_residentes, text="Cerrar Sesión", command=cerrar_sesion).grid(row=2, column=4, padx=10, pady=10)
