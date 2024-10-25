@@ -12,7 +12,6 @@ import tkinter as tk
 from PIL import Image, ImageTk
 import inicio_sesion  # Importa el archivo de inicio de sesión
 
-
 # Ruta de Tesseract en tu sistema (ajustar según corresponda)
 pytesseract.pytesseract.tesseract_cmd = r'C:\\Program Files\\Tesseract-OCR\\tesseract.exe'
 
@@ -21,7 +20,7 @@ conexion_db = psycopg2.connect(
     host="localhost",
     database="autovision",
     user="postgres",
-    password="1234"
+    password="holanda123."
 )
 cursor_db = conexion_db.cursor()
 
@@ -30,7 +29,7 @@ resultados = {}
 seguimiento_motos = Sort()
 
 # Cargar Modelos YOLO
-coco_model = YOLO('yolov8m.pt')
+#coco_model = YOLO('yolov8m.pt')
 detector_patente = YOLO('best.pt')
 
 # Capturar Video desde la Webcam
@@ -54,9 +53,42 @@ def validar_formato_patente(patente):
     return patente if patron.match(patente) else None
 
 def consultar_residente(patente):
-    """Consulta si una patente pertenece a un residente en la base de datos."""
-    cursor_db.execute("SELECT residente_rut_residente FROM vehiculo WHERE patente_vehiculo = %s", (patente,))
-    return cursor_db.fetchone() is not None
+    """Consulta los datos del residente según la patente."""
+    query = """
+    SELECT r.nombre_residente, r.apellido_residente, r.no_depto_residente, r.telefono_residente, v.patente_vehiculo 
+    FROM vehiculo v
+    JOIN residente r ON v.residente_rut_residente = r.rut_residente
+    WHERE v.patente_vehiculo = %s
+    """
+    
+    cursor_db.execute(query, (patente,))
+    resultado = cursor_db.fetchone()
+    
+    if resultado:
+        return {
+            "nombre_residente": resultado[0],
+            "apellido_residente": resultado[1],
+            "no_depto_residente": resultado[2],
+            "telefono_residente": resultado[3],
+            "patente_vehiculo": resultado[4]
+        }
+    return None
+
+def mostrar_datos_residente(residente):
+    etiqueta_estado.config(text="RESIDENTE", font=("Arial", 36, "bold"))
+    etiqueta_nombre.config(text=f"Nombre: {residente['nombre_residente']}")
+    etiqueta_apellido.config(text=f"Apellido: {residente['apellido_residente']}")
+    etiqueta_depto.config(text=f"Nro depto: {residente['no_depto_residente']}")
+    etiqueta_telefono.config(text=f"Teléfono: {residente['telefono_residente']}")
+    etiqueta_patente.config(text=f"Patente: {residente['patente_vehiculo']}")
+
+def ocultar_datos_residente():
+    etiqueta_estado.config(text="VISITA", font=("Arial", 36, "bold"))
+    etiqueta_nombre.config(text="")
+    etiqueta_apellido.config(text="")
+    etiqueta_depto.config(text="")
+    etiqueta_telefono.config(text="")
+    etiqueta_patente.config(text="")
 
 def mostrar_video():
     global n_frame, resultados
@@ -71,16 +103,16 @@ def mostrar_video():
     resultados[n_frame] = {}
 
     # Detección de Vehículos
-    detecciones = coco_model(frame)[0]
-    detecciones_ = []
-    for deteccion in detecciones.boxes.data.tolist():
-        x1, y1, x2, y2, score, class_id = deteccion
-        if int(class_id) in [2, 3, 5, 7] and score > 0.5:  # Filtrar por clases
-            detecciones_.append([x1, y1, x2, y2, score])
-            cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), (255, 0, 0), 2)
+    #detecciones = coco_model(frame)[0]
+    #detecciones_ = []
+    #for deteccion in detecciones.boxes.data.tolist():
+        #x1, y1, x2, y2, score, class_id = deteccion
+        #if int(class_id) in [2, 3, 5, 7] and score > 0.5:  # Filtrar por clases
+            #detecciones_.append([x1, y1, x2, y2, score])
+            #cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), (255, 0, 0), 2)
 
     # Actualizar seguimiento solo si hay detecciones válidas
-    id_seguimiento = seguimiento_motos.update(np.asarray(detecciones_)) if detecciones_ else np.empty((0, 5))
+    # id_seguimiento = seguimiento_motos.update(np.asarray(detecciones_)) if detecciones_ else np.empty((0, 5))
 
     # Detección de Patentes
     detector_patentes = detector_patente(frame)[0]
@@ -95,10 +127,13 @@ def mostrar_video():
             texto_patente = validar_formato_patente(texto_patente)
 
             if texto_patente:
-                if consultar_residente(texto_patente):
+                residente_info = consultar_residente(texto_patente)
+                if residente_info:
+                    mostrar_datos_residente(residente_info)  # Muestra los datos del residente
                     cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 2)
                     cv2.putText(frame, f'Residente: {texto_patente}', (int(x1), int(y1) - 10), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
                 else:
+                    ocultar_datos_residente()  # Oculta los datos y muestra "Visita"
                     cv2.putText(frame, f'Visita: {texto_patente}', (int(x1), int(y1) - 10), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
 
                 # Asignar Patente a un Vehículo
@@ -137,7 +172,7 @@ def ir_a_inicio_sesion():
     inicio_sesion.abrir_ventana_inicio()  # Abre la ventana de inicio de sesión
 
 # Cargar la imagen de fondo
-fondo = Image.open("/Autovision_Proyect/Fondo2.png").resize((ventana.winfo_screenwidth(), ventana.winfo_screenheight()))
+fondo = Image.open("Fondo2.png").resize((ventana.winfo_screenwidth(), ventana.winfo_screenheight()))
 fondo_imagen = ImageTk.PhotoImage(fondo)
 
 # Crear un canvas para el fondo
@@ -152,6 +187,30 @@ boton_inicio_sesion.place(x=10, y=10)  # Posiciona el botón en la esquina super
 # Label para mostrar el video
 label_video = tk.Label(ventana)
 label_video.place(relx=1, rely=0, anchor="ne")  # Posicionar en la esquina superior derecha
+
+# Crear un frame para mostrar los datos del residente o visita
+datos_frame = tk.Frame(ventana, bg="white", padx=10, pady=10)
+datos_frame.place(relx=0, rely=0.1, anchor="nw")  # Posición en la parte superior izquierda
+
+# Etiqueta de estado Residente/Visita
+etiqueta_estado = tk.Label(datos_frame, text="Residente o Visita", font=("Arial", 36, "bold"), bg="white")
+etiqueta_estado.pack(pady=10)
+
+# Información del residente
+etiqueta_nombre = tk.Label(datos_frame, text="", font=("Arial", 14), bg="white")
+etiqueta_nombre.pack(anchor="w")
+
+etiqueta_apellido = tk.Label(datos_frame, text="", font=("Arial", 14), bg="white")
+etiqueta_apellido.pack(anchor="w")
+
+etiqueta_depto = tk.Label(datos_frame, text="", font=("Arial", 14), bg="white")
+etiqueta_depto.pack(anchor="w")
+
+etiqueta_telefono = tk.Label(datos_frame, text="", font=("Arial", 14), bg="white")
+etiqueta_telefono.pack(anchor="w")
+
+etiqueta_patente = tk.Label(datos_frame, text="", font=("Arial", 14), bg="white")
+etiqueta_patente.pack(anchor="w")
 
 # Iniciar el video
 mostrar_video()
