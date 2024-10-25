@@ -1,7 +1,9 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
-from PIL import Image, ImageTk  # Para el logo
+from PIL import Image, ImageTk
 from bd import obtener_residentes, editar_residente, eliminar_residente, agregar_residente
+from reportes import abrir_ventana_reportes  # Importar la función del archivo reportes.py
+
 
 def abrir_ventana_residentes():
     ventana_residentes = tk.Toplevel()
@@ -12,19 +14,21 @@ def abrir_ventana_residentes():
     alto_ventana = ventana_residentes.winfo_screenheight()
     ventana_residentes.geometry(f"{ancho_ventana}x{alto_ventana}+0+0")
 
+    # Cargar la imagen de fondo
+    fondo_imagen = Image.open("/Autovision_Proyect/Fondo.png")  # Asegúrate de que el archivo esté en el mismo directorio
+    fondo_imagen = fondo_imagen.resize((ancho_ventana, alto_ventana), Image.LANCZOS)
+    fondo = ImageTk.PhotoImage(fondo_imagen)
+
+    # Label para el fondo
+    label_fondo = tk.Label(ventana_residentes, image=fondo)
+    label_fondo.image = fondo  # Mantener referencia para evitar que se elimine
+    label_fondo.place(x=0, y=0, relwidth=1, relheight=1)
+
     # Estilos para botones y widgets
     style = ttk.Style()
     style.configure('TButton', font=('Helvetica', 12), padding=10)
     style.configure('TLabel', font=('Helvetica', 12))
-
-    # Cargar logo
-    # imagen_logo = Image.open("logo.png")  # Asegúrate de tener un archivo llamado logo.png
-    # imagen_logo = imagen_logo.resize((100, 100), Image.ANTIALIAS)
-    # logo = ImageTk.PhotoImage(imagen_logo)
-
-    # label_logo = tk.Label(ventana_residentes, image=logo)
-    # label_logo.image = logo  # Mantener referencia para evitar que se elimine
-    # label_logo.grid(row=0, column=0, padx=20, pady=20)
+    style.configure('Treeview', font=('Helvetica', 12, 'normal'))  # Cambia el tamaño a 14 o al que prefieras
 
     # Tabla con los residentes
     columnas = ('rut', 'nombre_apellido', 'telefono', 'nro_depto', 'patente')
@@ -34,7 +38,9 @@ def abrir_ventana_residentes():
     tabla_residentes.heading('telefono', text='Teléfono')
     tabla_residentes.heading('nro_depto', text='Nro. Depto')
     tabla_residentes.heading('patente', text='Patente Vehículo')
-    tabla_residentes.grid(row=1, column=0, columnspan=4, padx=20, pady=10)
+
+    # Centrar la tabla
+    tabla_residentes.place(relx=0.5, rely=0.5, anchor='center')
 
     # Función para cargar los residentes en la tabla
     def cargar_residentes():
@@ -158,6 +164,13 @@ def abrir_ventana_residentes():
     ttk.Button(ventana_residentes, text="Editar", command=editar_residente_callback).grid(row=2, column=0, padx=10, pady=10)
     ttk.Button(ventana_residentes, text="Eliminar", command=eliminar_residente_callback).grid(row=2, column=1, padx=10, pady=10)
     ttk.Button(ventana_residentes, text="Agregar Residente", command=abrir_ventana_agregar).grid(row=2, column=2, padx=10, pady=10)
+    ttk.Button(ventana_residentes, text="Reportes", command=abrir_ventana_reportes).grid(row=2, column=6, padx=10, pady=10)
+    
+    # Función para cerrar sesión
+    def cerrar_sesion():
+        ventana_residentes.destroy()
+        import reportes  # Dirige a la página de inicio de sesión
+
 
     # Función para cerrar sesión
     def cerrar_sesion():
@@ -165,4 +178,4 @@ def abrir_ventana_residentes():
         import inicio_sesion  # Dirige a la página de inicio de sesión
 
     # Botón de cerrar sesión
-    ttk.Button(ventana_residentes, text="Cerrar Sesión", command=cerrar_sesion).grid(row=2, column=2, padx=10, pady=10)
+    ttk.Button(ventana_residentes, text="Cerrar Sesión", command=cerrar_sesion).grid(row=2, column=4, padx=10, pady=10)
