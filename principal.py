@@ -20,7 +20,7 @@ conexion_db = psycopg2.connect(
     host="localhost",
     database="autovision",
     user="postgres",
-    password="holanda123."
+    password="1234"
 )
 cursor_db = conexion_db.cursor()
 

@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import messagebox
 from PIL import Image, ImageTk
 from util import validar_login
 from residentes import abrir_ventana_residentes
@@ -17,48 +17,101 @@ def abrir_ventana_inicio():
     # Salir de pantalla completa con la tecla Esc
     def salir_pantalla_completa(event):
         root.attributes('-fullscreen', False)
-
     root.bind("<Escape>", salir_pantalla_completa)
 
-    # Marco superior (encabezado)
-    header_frame = tk.Frame(root, bg='white')
-    header_frame.pack(fill='both', expand=True)
+    # Frame izquierdo para la imagen de fondo
+    left_frame = tk.Frame(root, bg='white')
+    left_frame.pack(side='left', fill='both')
+    
+    try:
+        fondo_img = Image.open("image.png") #modificar imagen
+        fondo_img = fondo_img.resize((ancho_ventana // 2, alto_ventana), Image.LANCZOS)
+        fondo_photo = ImageTk.PhotoImage(fondo_img)
+        
+        img_label = tk.Label(left_frame, image=fondo_photo)
+        img_label.image = fondo_photo
+        img_label.pack(fill='both', expand=True)
+    except Exception as e:
+        print(f"Error al cargar la imagen: {e}")
 
-    # Marco inferior (login)
-    login_frame = tk.Frame(root, bg='black')
-    login_frame.pack(fill='both', expand=True)
+    # Frame derecho para el formulario de inicio de sesión
+    right_frame = tk.Frame(root, bg='#2897cb')
+    right_frame.pack(side='right', fill='both', expand=True)
 
-    # Texto de "INICIO DE SESIÓN" centrado
-    inicio_label = tk.Label(header_frame, text="Inicio de", font=('Arial', 24), bg='white')
-    inicio_label.place(relx=0.5, rely=0.5, anchor='center')
+    # Icono de usuario en la parte superior
+    try:
+        user_icon = Image.open("user_icon.png").resize((80, 80), Image.LANCZOS)  # Cambia "user_icon.png" por el archivo del icono que quieras
+        user_icon = ImageTk.PhotoImage(user_icon)
+        icon_label = tk.Label(right_frame, image=user_icon, bg='#2e11bf')
+        icon_label.image = user_icon
+        icon_label.place(relx=0.5, rely=0.2, anchor='center')
+    except Exception as e:
+        print(f"Error al cargar el icono: {e}")
 
-    # Etiquetas y campos de texto para el login centrados
-    usuario_label = tk.Label(login_frame, text="RUT sin dígito verificador:", bg='black', fg='white', font=('Arial', 14))
-    usuario_label.place(relx=0.5, rely=0.1, anchor='center')
-    usuario_entry = tk.Entry(login_frame, font=('Arial', 14))
-    usuario_entry.place(relx=0.5, rely=0.2, anchor='center', width=300)
+    # Título de inicio de sesión
+    inicio_label = tk.Label(right_frame, text="Inicio de Sesión", font=('Helvetica', 24, 'bold'), bg='#2897cb', fg='white')
+    inicio_label.place(relx=0.5, rely=0.3, anchor='center')
 
-    password_label = tk.Label(login_frame, text="Contraseña:", bg='black', fg='white', font=('Arial', 14))
-    password_label.place(relx=0.5, rely=0.3, anchor='center')
-    password_entry = tk.Entry(login_frame, font=('Arial', 14), show='*')
-    password_entry.place(relx=0.5, rely=0.4, anchor='center', width=300)
+    # Campo de entrada para usuario con icono
+    usuario_frame = tk.Frame(right_frame, bg='#2897cb')
+    usuario_frame.place(relx=0.5, rely=0.4, anchor='center')
 
-    olvide_password_label = tk.Label(login_frame, text="¿Olvidó su contraseña?", bg='black', fg='white', font=('Arial', 12))
-    olvide_password_label.place(relx=0.5, rely=0.5, anchor='center')
+    usuario_icon = tk.Label(usuario_frame, text="👤", bg='#2897cb', fg='white', font=('Arial', 14))
+    usuario_icon.pack(side='left')
+    
+    usuario_entry = tk.Entry(usuario_frame, font=('Arial', 14), width=20, bd=0, fg='black', insertbackground='black', bg='white')
+    usuario_entry.pack(side='left', fill='x')
 
-    def iniciar_sesion():
-        usuario = usuario_entry.get()
-        contrasena = password_entry.get()
+    # Mensaje de error debajo del campo de usuario
+    usuario_error = tk.Label(right_frame, text="", bg='#2897cb', fg='white', font=('Arial', 10))
+    usuario_error.place(relx=0.5, rely=0.45, anchor='center')
 
-        if validar_login(usuario, contrasena):
-            messagebox.showinfo("Éxito", "Inicio de sesión correcto")
-            root.withdraw()
-            abrir_ventana_residentes()
-        else:
-            messagebox.showerror("Error", "Usuario o contraseña incorrectos")
+    # Campo de entrada para contraseña con icono
+    password_frame = tk.Frame(right_frame, bg='#2897cb')
+    password_frame.place(relx=0.5, rely=0.5, anchor='center')
 
-    login_button = tk.Button(login_frame, text="Iniciar sesión", font=('Arial', 16), bg='yellow', padx=10, pady=5, command=iniciar_sesion)
+    password_icon = tk.Label(password_frame, text="🔒", bg='#2897cb', fg='white', font=('Arial', 14))
+    password_icon.pack(side='left')
+
+    password_entry = tk.Entry(password_frame, font=('Arial', 14), show='*', width=20, bd=0,  fg='black', insertbackground='black', bg='white')
+    password_entry.pack(side='left', fill='x')
+
+    # Mensaje de error debajo del campo de contraseña
+    password_error = tk.Label(right_frame, text="", bg='#2897cb', fg='white', font=('Arial', 10))
+    password_error.place(relx=0.5, rely=0.55, anchor='center')
+
+    # Botón de inicio de sesión
+    login_button = tk.Button(right_frame, text="Iniciar Sesión", font=('Arial', 14, 'bold'), bg='#097abd', fg='white', activebackground='black', activeforeground='white', padx=10, pady=5, bd=0, command=lambda: iniciar_sesion(usuario_entry, password_entry))
     login_button.place(relx=0.5, rely=0.6, anchor='center')
+
+    # Enlace de "Forgot Password?"
+    olvide_password_label = tk.Label(right_frame, text="Olvidaste tu contraseña?", bg='#2897cb', fg='white', font=('Arial', 10, 'underline'))
+    olvide_password_label.place(relx=0.5, rely=0.7, anchor='center')
+
+    # Validación de inicio de sesión
+    def iniciar_sesion(usuario_entry, password_entry):
+        usuario = usuario_entry.get().strip()
+        contrasena = password_entry.get().strip()
+
+        # Limpiar mensajes de error
+        usuario_error.config(text="")
+        password_error.config(text="")
+
+        # Validaciones
+        if not usuario and not contrasena:
+            usuario_error.config(text="DEBE INGRESAR USUARIO")
+            password_error.config(text="DEBE INGRESAR CONTRASEÑA")
+        elif not usuario:
+            usuario_error.config(text="DEBE INGRESAR USUARIO")
+        elif not contrasena:
+            password_error.config(text="DEBE INGRESAR CONTRASEÑA")
+        else:
+            if validar_login(usuario, contrasena):
+                messagebox.showinfo("Éxito", "Inicio de sesión correcto")
+                root.withdraw()
+                abrir_ventana_residentes()
+            else:
+                messagebox.showerror("Error", "Usuario o contraseña incorrectos")
 
     # Ejecutar la aplicación solo si este archivo es el principal
     if __name__ == "__main__":
