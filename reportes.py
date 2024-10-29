@@ -1,237 +1,206 @@
-import psycopg2
 import tkinter as tk
-from tkinter import ttk
-from tkinter import Tk, Label, Button, Radiobutton, StringVar, END
+from tkinter import ttk, messagebox, filedialog
 from tkcalendar import DateEntry
-from tkinter import ttk, filedialog
+import psycopg2
 from datetime import datetime
-from openpyxl import Workbook
+import openpyxl
+from PIL import Image, ImageTk
 
-def abrir_ventana_reportes():
-    ventana_reportes = tk.Toplevel()  # Utiliza tk en minúsculas para acceder a Toplevel
-    ventana_reportes.title("Ventana de Reportes")
+# Función para establecer la conexión a la base de datos
+def conectar_base_datos():
+    try:
+        conn = psycopg2.connect(
+            host="localhost",
+            database="autovision",
+            user="postgres",
+            password="root"
+        )
+        return conn
+    except (Exception, psycopg2.Error) as error:
+        print("Error al conectar a la base de datos:", error)
+        return None
+
+# Función para obtener los datos según el tipo de reporte
+def obtener_datos(tipo_reporte):
+    conn = conectar_base_datos()
+    cursor = conn.cursor()
     
-    # 1. Función para conectarse a la base de datos PostgreSQL
-    def conectar_db():
-        try:
-            conexion = psycopg2.connect(
-                host="localhost",
-                database="autovision",
-                user="postgres",
-                password="root"
-            )
-            return conexion
-        except Exception as e:
-            print(f"Error al conectar a la base de datos: {e}")
-            return None
+    if tipo_reporte == "Multados":
+        cursor.execute("SELECT * FROM visita_historico WHERE multado = True")
+    elif tipo_reporte == "Residentes":
+        cursor.execute("""
+            SELECT r.rut_residente, r.dv_residente, r.nombre_residente, r.apellido_residente, 
+                   r.fec_nac_residente, r.telefono_residente, r.no_depto_residente, 
+                   v.patente_vehiculo
+            FROM residente r
+            LEFT JOIN vehiculo v ON r.rut_residente = v.residente_rut_residente
+        """)
+    else:
+        print("Tipo de reporte inválido")
+        return []
+    
+    datos = cursor.fetchall()
+    cursor.close()  # Cerrar el cursor
+    return datos
 
-    # 2. Función para obtener visitas multadas entre fechas
-    def obtener_multados_fechas(desde, hasta):
-        try:
-            conexion = conectar_db()
-            if not conexion:
-                return []
+# Función para obtener los datos entre fechas
+def obtener_datos_entre_fechas(tipo_reporte, fecha_desde, fecha_hasta):
+    conn = conectar_base_datos()
+    cursor = conn.cursor()
+    
+    if tipo_reporte == "Multados":
+        cursor.execute("""
+            SELECT * FROM visita_historico 
+            WHERE multado = True 
+            AND momento_ingreso_historico >= %s 
+            AND momento_ingreso_historico <= %s
+        """, (fecha_desde, fecha_hasta))
+    elif tipo_reporte == "Residentes":
+        cursor.execute("""
+            SELECT r.rut_residente, r.dv_residente, r.nombre_residente, r.apellido_residente, 
+                   r.fec_nac_residente, r.telefono_residente, r.no_depto_residente, 
+                   v.patente_vehiculo
+            FROM residente r
+            LEFT JOIN vehiculo v ON r.rut_residente = v.residente_rut_residente
+            WHERE r.fecha_registro >= %s AND r.fecha_registro <= %s
+        """, (fecha_desde, fecha_hasta))
+    else:
+        print("Tipo de reporte inválido")
+        return []
+    
+    datos = cursor.fetchall()
+    cursor.close()  # Cerrar el cursor
+    return datos
 
-            cursor = conexion.cursor()
+# Función para actualizar el Treeview
+def actualizar_treeview(tipo_reporte, fecha_desde=None, fecha_hasta=None):
+    if fecha_desde and fecha_hasta:
+        datos = obtener_datos_entre_fechas(tipo_reporte, fecha_desde, fecha_hasta)
+    else:
+        datos = obtener_datos(tipo_reporte)
+    
+    # Limpiar el Treeview antes de agregar nuevos datos
+    for i in tree.get_children():
+        tree.delete(i)
+    
+    # Configurar las columnas según el tipo de reporte
+    if tipo_reporte == "Multados":
+        columns = ('rut visita', 'dv', 'nombre_visita_historica', 'apellido_visita_historica', 
+                   'nro departamento', 'patente_visita_historica', 
+                   'momento_ingreso_historico', 'momento_salida_historico', 
+                   'visita_rut_visita')
+    elif tipo_reporte == "Residentes":
+        columns = ('rut_residente', 'dv_residente', 'nombre_residente', 'apellido_residente', 
+                   'fec_nac_residente', 'telefono_residente', 'no_depto_residente', 
+                   'patente_vehiculo')
 
-            query = """
-                SELECT rut_visita_historica, nombre_visita_historica, apellido_visita_historica, 
-                    no_depto_visita_historica, patente_visita_historica, momento_ingreso_historico
-                FROM visita_historico
-                WHERE momento_ingreso_historico >= %s AND momento_ingreso_historico < %s + interval '1 day'
-                AND multado = TRUE
-            """
-            cursor.execute(query, (desde, hasta))
-            multados = cursor.fetchall()
+    # Configurar el Treeview con las nuevas columnas
+    tree['columns'] = columns
+    for col in columns:
+        tree.heading(col, text=col)  # Establecer los encabezados
+        tree.column(col, width=80)  # Establecer un ancho fijo para cada columna
 
-            cursor.close()
-            conexion.close()
-            return multados
-        except Exception as e:
-            print(f"Error en la consulta SQL: {e}")
-            return []
+    # Agregar los nuevos datos al Treeview
+    if datos:
+        for row in datos:
+            tree.insert('', 'end', values=row)
+    else:
+        messagebox.showinfo("Sin resultados", "No se encontraron datos en el rango de fechas seleccionado.")
 
-    # 3. Función para obtener residentes (actualmente sin filtro de fecha)
-    def obtener_residentes_fechas():
-        try:
-            conexion = conectar_db()
-            if not conexion:
-                return []
+# Función para filtrar los datos
+def filtrar_datos():
+    tipo_reporte = tipo_reporte_var.get()
+    fecha_desde = datetime.combine(fecha_desde_entry.get_date(), datetime.min.time())
+    fecha_hasta = datetime.combine(fecha_hasta_entry.get_date(), datetime.max.time())
 
-            cursor = conexion.cursor()
+    actualizar_treeview(tipo_reporte, fecha_desde, fecha_hasta)
 
-            query = """
-                SELECT r.rut_residente, r.nombre_residente, r.apellido_residente, v.patente_vehiculo 
-                FROM residente r
-                LEFT JOIN vehiculo v ON r.rut_residente = v.residente_rut_residente
-                WHERE r.no_depto_residente IS NOT NULL
-            """
-            cursor.execute(query)
-            residentes = cursor.fetchall()
+# Función para generar el reporte en Excel
+def generar_reporte_excel():
+    # Obtener los datos del Treeview
+    datos = []
+    for row in tree.get_children():
+        datos.append(tree.item(row)['values'])
 
-            cursor.close()
-            conexion.close()
-            return residentes
-        except Exception as e:
-            print(f"Error en la consulta SQL: {e}")
-            return []
+    if not datos:
+        messagebox.showwarning("Sin datos", "No hay datos para exportar.")
+        return
 
-    # 4. Función para mostrar el reporte de multados entre fechas
-    def mostrar_reporte_multados():
-        limpiar_tabla()
-        configurar_columnas_multados()
-        desde = calendario_desde.get_date()
-        hasta = calendario_hasta.get_date()
+    # Preguntar al usuario dónde guardar el archivo
+    ruta_archivo = filedialog.asksaveasfilename(defaultextension=".xlsx",
+                                                  filetypes=[("Archivos Excel", "*.xlsx"),
+                                                             ("Todos los archivos", "*.*")])
+    if not ruta_archivo:
+        return  # Si el usuario cancela, no hacemos nada
 
-        multados = obtener_multados_fechas(desde, hasta)
+    # Crear un libro de trabajo y una hoja
+    libro = openpyxl.Workbook()
+    hoja = libro.active
+    hoja.title = "Reporte"
 
-        if multados:
-            for visita in multados:
-                tree.insert("", END, values=(visita[0], visita[1], visita[2], visita[3], visita[4], visita[5]))
-        else:
-            tree.insert("", END, values=("No hay datos",))
+    # Escribir los encabezados
+    columnas = tree['columns']
+    hoja.append(columnas)
 
-    # 5. Función para mostrar el reporte de residentes (sin filtro de fecha en este caso)
-    def mostrar_reporte_residentes():
-        limpiar_tabla()
-        configurar_columnas_residentes()
+    # Escribir los datos
+    for fila in datos:
+        hoja.append(fila)
 
-        residentes = obtener_residentes_fechas()
+    # Guardar el archivo
+    libro.save(ruta_archivo)
+    messagebox.showinfo("Éxito", "Reporte generado correctamente.")
 
-        if residentes:
-            for residente in residentes:
-                tree.insert("", END, values=(residente[0], residente[1], residente[2], residente[3]))
-        else:
-            tree.insert("", END, values=("No hay datos",))
+# Crear la ventana principal
+root = tk.Tk()
+root.title("Sistema de Reportes")
+root.geometry("1920x1020")  # Ajusta el tamaño según tus necesidades
 
-    # 6. Función para limpiar la tabla antes de mostrar nuevos resultados
-    def limpiar_tabla():
-        for row in tree.get_children():
-            tree.delete(row)
+# Cargar la imagen de fondo
+fondo_img = Image.open("fondo.png")
+fondo_img = fondo_img.resize((1600, 920), Image.LANCZOS)  # Cambiar a LANCZOS
+fondo_photo = ImageTk.PhotoImage(fondo_img)
 
-    # 7. Función para configurar columnas específicas para multados
-    def configurar_columnas_multados():
-        tree["columns"] = ("RUT", "Nombre", "Apellido", "Depto", "Patente", "Ingreso")
-        tree.heading("RUT", text="RUT")
-        tree.heading("Nombre", text="Nombre")
-        tree.heading("Apellido", text="Apellido")
-        tree.heading("Depto", text="Depto")
-        tree.heading("Patente", text="Patente")
-        tree.heading("Ingreso", text="Fecha Ingreso")
+# Crear un label para la imagen de fondo
+label_fondo = tk.Label(root, image=fondo_photo)
+label_fondo.place(relwidth=1, relheight=1)  # Ajustar a todo el fondo
+# Crear un menú desplegable para seleccionar el tipo de reporte
+tipo_reporte_var = tk.StringVar()
+tipo_reporte_var.set("Multados")  # Valor por defecto
 
-        tree.column("RUT", width=100)
-        tree.column("Nombre", width=120)
-        tree.column("Apellido", width=120)
-        tree.column("Depto", width=80)
-        tree.column("Patente", width=100)
-        tree.column("Ingreso", width=150)
+# Crear un label para el título
+titulo_label = tk.Label(root, text="REPORTES", font=("Helvetica", 16))
+titulo_label.pack(pady=10)
 
-    # 8. Función para configurar columnas específicas para residentes
-    def configurar_columnas_residentes():
-        tree["columns"] = ("RUT", "Nombre", "Apellido", "Patente")
-        tree.heading("RUT", text="RUT")
-        tree.heading("Nombre", text="Nombre")
-        tree.heading("Apellido", text="Apellido")
-        tree.heading("Patente", text="Patente")
+tipo_reporte_menu = ttk.Combobox(root, textvariable=tipo_reporte_var, values=["Multados", "Residentes"])
+tipo_reporte_menu.pack(pady=5)
 
-        tree.column("RUT", width=100)
-        tree.column("Nombre", width=120)
-        tree.column("Apellido", width=120)
-        tree.column("Patente", width=120)
+# Crear entradas de fecha
+fecha_desde_label = tk.Label(root, text="Fecha Desde:")
+fecha_desde_label.pack(pady=5)
+fecha_desde_entry = DateEntry(root, width=12, background='darkblue', foreground='white', borderwidth=2)
+fecha_desde_entry.pack(pady=5)
 
-    # 9. Función para generar el archivo Excel con la tabla de reportes
-    def generar_excel():
-        # Abre el diálogo para seleccionar la ubicación y el nombre del archivo
-        excel_file = filedialog.asksaveasfilename(defaultextension=".xlsx",
-                                                    filetypes=[("Excel files", "*.xlsx"),
-                                                            ("All files", "*.*")])
-        if not excel_file:  # Si el usuario cancela, no hacer nada
-            return
+fecha_hasta_label = tk.Label(root, text="Fecha Hasta:")
+fecha_hasta_label.pack(pady=5)
+fecha_hasta_entry = DateEntry(root, width=12, background='darkblue', foreground='white', borderwidth=2)
+fecha_hasta_entry.pack(pady=5)
 
-        workbook = Workbook()
-        sheet = workbook.active
-        sheet.title = "Reporte"
+# Botón para filtrar los datos
+boton_filtrar = tk.Button(root, text="Filtrar", command=filtrar_datos)
+boton_filtrar.pack(pady=5)
 
-        # Títulos de las columnas
-        if tipo_reporte.get() == "multados":
-            headers = ["RUT", "Nombre", "Apellido", "Depto", "Patente", "Ingreso"]
-        else:
-            headers = ["RUT", "Nombre", "Apellido", "Patente"]
 
-        sheet.append(headers)
 
-        # Añadir datos a la hoja de cálculo
-        for row in tree.get_children():
-            values = tree.item(row)["values"]
-            sheet.append(values)
+# Crear el Treeview
+tree = ttk.Treeview(root, show='headings', height=15)  # Ajusta la altura según tus necesidades
+tree.pack(fill='x', padx=50, pady=50)  # Ajustar para que no ocupe todo el ancho
+# Botón para generar el reporte en Excel
+boton_generar_excel = tk.Button(root, text="Generar Reporte", command=generar_reporte_excel)
+boton_generar_excel.pack(pady=5)
+# Llamada inicial para cargar los datos
+actualizar_treeview("Multados")
 
-        # Guardar el archivo Excel
-        workbook.save(excel_file)
-        print(f"Excel generado: {excel_file}")
+# Bind the combobox selection change to update the Treeview
+tipo_reporte_menu.bind("<<ComboboxSelected>>", lambda event: actualizar_treeview(tipo_reporte_var.get()))
 
-    # 10. Crear la interfaz gráfica con Tkinter
-    ventana = Tk()
-    ventana.title("Reportes")
-    ventana.attributes('-fullscreen', True)  # Hacer que la ventana ocupe toda la pantalla
-    ventana.configure(bg='white')  # Fondo blanco
-
-    # Etiqueta de título
-    titulo = Label(ventana, text="Reportes", font=("Arial", 16), bg='white')
-    titulo.grid(row=0, column=1, pady=10)
-
-    # Opción de selección de tipo de reporte (Multados o Residentes)
-    tipo_reporte = StringVar()  # No se le asigna ningún valor predeterminado
-
-    label_opcion = Label(ventana, text="Seleccione una opción:", bg='white')
-    label_opcion.grid(row=1, column=0, pady=10)
-
-    radio_multados = Radiobutton(ventana, text="Reportes multados", variable=tipo_reporte, value="multados", bg='white')
-    radio_multados.grid(row=1, column=1, pady=10)
-
-    radio_residentes = Radiobutton(ventana, text="Reporte residentes", variable=tipo_reporte, value="residentes", bg='white')
-    radio_residentes.grid(row=1, column=2, pady=10)
-
-    # Calendarios de selección de fecha Desde y Hasta
-    label_desde = Label(ventana, text="Desde:", bg='white')
-    label_desde.grid(row=2, column=1)
-
-    calendario_desde = DateEntry(ventana, width=12, background='darkblue', foreground='white', borderwidth=2)
-    calendario_desde.grid(row=2, column=2)
-
-    label_hasta = Label(ventana, text="Hasta:", bg='white')
-    label_hasta.grid(row=2, column=3)
-
-    calendario_hasta = DateEntry(ventana, width=12, background='darkblue', foreground='white', borderwidth=2)
-    calendario_hasta.grid(row=2, column=4)
-
-    # Botón para mostrar reporte diario de visitas
-    boton_diario = Button(ventana, text="Reportes Diarios Visitas", command=lambda: mostrar_reporte_multados() if tipo_reporte.get() == "multados" else mostrar_reporte_residentes(), bg='lightgray')
-    boton_diario.grid(row=3, column=0, pady=20)
-
-    # Botón para generar reportes
-    boton_generar = Button(ventana, text="Generar Reportes", command=lambda: mostrar_reporte_multados() if tipo_reporte.get() == "multados" else mostrar_reporte_residentes(), bg='lightgray')
-    boton_generar.grid(row=3, column=1, pady=20)
-
-    # Botón para limpiar la tabla
-    boton_limpiar = Button(ventana, text="Limpiar", command=limpiar_tabla, bg='lightgray')
-    boton_limpiar.grid(row=3, column=2, pady=20)
-
-    # Botón para generar Excel
-    boton_excel = Button(ventana, text="Generar Excel", command=generar_excel, bg='lightgray')
-    boton_excel.grid(row=3, column=3, pady=20)
-
-    # Crear el marco para la tabla de reportes
-    frame = ttk.Frame(ventana)
-    frame.grid(row=4, column=0, columnspan=5, padx=20, pady=20)
-
-    # Crear el Treeview para mostrar resultados
-    tree = ttk.Treeview(frame, show="headings")
-    tree.pack(fill="both", expand=True)
-
-    # Crear la barra de desplazamiento vertical
-    scrollbar = ttk.Scrollbar(frame, orient="vertical", command=tree.yview)
-    scrollbar.pack(side='right', fill='y')
-    tree.configure(yscroll=scrollbar.set)
-
-    # Iniciar el bucle principal de la interfaz gráfica
-    ventana.mainloop()
+root.mainloop()
