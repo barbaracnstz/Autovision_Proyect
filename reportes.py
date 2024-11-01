@@ -6,6 +6,8 @@ from tkcalendar import DateEntry
 from tkinter import ttk, filedialog
 from datetime import datetime
 from openpyxl import Workbook
+from menu import crear_menu
+
 
 def abrir_ventana_reportes():
     ventana_reportes = tk.Toplevel()  # Utiliza tk en minúsculas para acceder a Toplevel
@@ -174,6 +176,8 @@ def abrir_ventana_reportes():
     ventana.title("Reportes")
     ventana.attributes('-fullscreen', True)  # Hacer que la ventana ocupe toda la pantalla
     ventana.configure(bg='white')  # Fondo blanco
+    
+    crear_menu(ventana_reportes)
 
     # Etiqueta de título
     titulo = Label(ventana, text="Reportes", font=("Arial", 16), bg='white')

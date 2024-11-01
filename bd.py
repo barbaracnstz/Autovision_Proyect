@@ -41,47 +41,71 @@ def obtener_residentes():
         return lista_residentes
     return []
 
+def obtener_datos_residentes(self):
+        conexion = conectar()
+        if not conexion:
+            messagebox.showerror("Error", "No se pudo conectar a la base de datos.")
+            return []
+
+        cursor = conexion.cursor()
+        query = """SELECT rut_residente, nombre_residente, telefono_residente, no_depto_residente, patente_vehiculo 
+                   FROM residente LEFT JOIN vehiculo ON residente.rut_residente = vehiculo.residente_rut_residente"""
+        cursor.execute(query)
+        datos = cursor.fetchall()
+        conexion.close()
+        return datos
 
 # Editar la información de un residente
-def editar_residente(rut_residente, nuevo_telefono, nuevo_nro_depto, nueva_patente):
-    conexion = conectar()
-    if conexion:
-        cursor = conexion.cursor()
-
-        # Actualizar datos en la tabla residente
-        query_residente = """
-        UPDATE residente 
-        SET telefono_residente = %s, no_depto_residente = %s 
-        WHERE rut_residente = %s;
-        """
-        cursor.execute(query_residente, (nuevo_telefono, nuevo_nro_depto, rut_residente))
-
-        # Actualizar patente en la tabla vehiculo
-        query_vehiculo = """
-        UPDATE vehiculo 
-        SET patente_vehiculo = %s 
-        WHERE residente_rut_residente = %s;
-        """
-        cursor.execute(query_vehiculo, (nueva_patente, rut_residente))
-
-        # Guardar cambios y cerrar conexión
-        conexion.commit()
+def editar_residente(rut, nuevo_nombre, nuevo_telefono, nuevo_nro_depto, nueva_patente):
+    conexion = conectar()  # Conexión a la base de datos
+    cursor = conexion.cursor()
+    try:
+        cursor.execute("""
+            UPDATE residente SET 
+                nombre_residente = %s,
+                telefono_residente = %s,
+                no_depto_residente = %s
+            WHERE rut_residente = %s
+        """, (nuevo_nombre, nuevo_telefono, nuevo_nro_depto, rut))
+        
+        # Actualizar la patente en la tabla de vehículos
+        if nueva_patente:  # Solo actualizamos si se proporciona una nueva patente
+            cursor.execute("""
+                UPDATE vehiculo SET 
+                    patente_vehiculo = %s
+                WHERE residente_rut_residente = %s
+            """, (nueva_patente, rut))
+        
+        conexion.commit()  # Confirmar los cambios
+    except Exception as e:
+        print(f"Error al editar residente: {e}")
+    finally:
+        cursor.close()
         conexion.close()
-
 
 # Eliminar un residente
 def eliminar_residente(rut_residente):
     conexion = conectar()
     if conexion:
-        cursor = conexion.cursor()
-        query_vehiculo = "DELETE FROM vehiculo WHERE rut_residente = %s;"
-        cursor.execute(query_vehiculo, (rut_residente,))
-        
-        query_residente = "DELETE FROM residente WHERE rut_residente = %s;"
-        cursor.execute(query_residente, (rut_residente,))
-        
-        conexion.commit()
-        conexion.close()
+        try:
+            cursor = conexion.cursor()
+            # Eliminar primero el vehículo asociado al residente
+            query_vehiculo = "DELETE FROM vehiculo WHERE residente_rut_residente = %s;"  # Asegúrate de usar el nombre correcto
+            cursor.execute(query_vehiculo, (rut_residente,))
+            
+            # Luego eliminar el residente
+            query_residente = "DELETE FROM residente WHERE rut_residente = %s;"
+            cursor.execute(query_residente, (rut_residente,))
+            
+            conexion.commit()
+        except Exception as e:
+            print(f"Error al eliminar residente: {e}")  # Puedes ajustar esto a un log o mensaje
+        finally:
+            conexion.close()
+    else:
+        print("Error: No se pudo conectar a la base de datos.")
+
+
 
 # Agregar un nuevo residente y su vehículo
 def agregar_residente(rut_residente, dv_residente, nombre_residente, apellido_residente, fec_nac_residente, telefono_residente, no_depto_residente, patente_vehiculo):
@@ -106,4 +130,21 @@ def agregar_residente(rut_residente, dv_residente, nombre_residente, apellido_re
         # Confirmar cambios en la base de datos
         conexion.commit()
         conexion.close()
+        
+def cargar_datos():
+    conexion = conectar()  # Conexión a la base de datos
+    cursor = conexion.cursor()
+    try:
+        query = """SELECT rut_residente, nombre_residente, telefono_residente, no_depto_residente, patente_vehiculo 
+                   FROM residente LEFT JOIN vehiculo ON residente.rut_residente = vehiculo.residente_rut_residente"""
+        cursor.execute(query)
+        registros = cursor.fetchall()
+        return registros
+    except Exception as e:
+        print(f"Error al cargar datos: {e}")
+        return []
+    finally:
+        cursor.close()
+        conexion.close()
+
 
