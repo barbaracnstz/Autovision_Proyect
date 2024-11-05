@@ -27,10 +27,17 @@ def crear_menu(ventana):
         abrir_ventana_reportes()
         
     def go_to_administradores():
-        print("Ir a Administradores")
+        ventana.destroy()
+        from administradores import abrir_ventana_administradores
+        abrir_ventana_administradores()
 
     def go_to_mi_perfil():
         print("Ir a Mi Perfil")
+        
+    def cerrar_sesion():
+        ventana.destroy()
+        from inicio_sesion import abrir_ventana_inicio
+        abrir_ventana_inicio()
 
     # Crear los botones del menú con estilo
     btn_inicio = tk.Button(menu_frame, text="🏠 Inicio", command=go_to_inicio, font=button_font,
@@ -52,3 +59,7 @@ def crear_menu(ventana):
     btn_mi_perfil = tk.Button(menu_frame, text="👤 Mi Perfil", command=go_to_mi_perfil, font=button_font,
                               bg="#4db6ac", fg="white", bd=0, activebackground="white", activeforeground="black", padx=15)
     btn_mi_perfil.pack(side=tk.LEFT, padx=10)
+    
+    btn_cerrar_sesion = tk.Button(menu_frame, text="Cerrar Sesión", command=cerrar_sesion, font=button_font,
+                              bg="#4db6ac", fg="white", bd=0, activebackground="white", activeforeground="black", padx=15)
+    btn_cerrar_sesion.pack(side=tk.RIGHT, padx=10)

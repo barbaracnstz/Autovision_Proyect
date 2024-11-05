@@ -155,3 +155,27 @@ def editar_residente(rut_residente, nombre_residente, telefono_residente, no_dep
         finally:
             conexion.close()
 
+########################################################        ADMIN
+def cargar_datos_admins(texto_busqueda=""):
+    """Cargar los datos de los administradores desde la base de datos."""
+    conn = conectar()
+    if conn is None:
+        return []
+
+    cursor = conn.cursor()
+    query = """
+    SELECT rut_admin, nombre_admin, apellido_admin, telefono_admin, correo_admin, cargo, estado
+    FROM administrador
+    """
+    
+    # Si hay texto de búsqueda, aplicar filtro a nombre, apellido o correo
+    if texto_busqueda:
+        query += " WHERE nombre_admin ILIKE %s OR apellido_admin ILIKE %s OR correo_admin ILIKE %s"
+        cursor.execute(query, (f"%{texto_busqueda}%", f"%{texto_busqueda}%", f"%{texto_busqueda}%"))
+    else:
+        cursor.execute(query)
+
+    # Obtener los resultados y devolverlos
+    registros = cursor.fetchall()
+    conn.close()
+    return registros
