@@ -3,6 +3,7 @@ from tkinter import messagebox
 from PIL import Image, ImageTk
 from util import validar_login
 from residentes import abrir_ventana_residentes
+from inicio import abrir_ventana_administrador
 
 def abrir_ventana_inicio():
     # Crear la ventana principal
@@ -109,7 +110,7 @@ def abrir_ventana_inicio():
             if validar_login(usuario, contrasena):
                 messagebox.showinfo("Éxito", "Inicio de sesión correcto")
                 root.withdraw()
-                abrir_ventana_residentes()
+                abrir_ventana_administrador()
             else:
                 messagebox.showerror("Error", "Usuario o contraseña incorrectos")
 
