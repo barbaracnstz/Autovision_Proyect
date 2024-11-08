@@ -179,3 +179,20 @@ def cargar_datos_admins(texto_busqueda=""):
     registros = cursor.fetchall()
     conn.close()
     return registros
+
+def admin(rut_admin):
+    """Cargar los datos del administrador específico desde la base de datos."""
+    conn = conectar()
+    if conn is None:
+        return None
+
+    cursor = conn.cursor()
+    query = """
+    SELECT rut_admin, dv_admin, nombre_admin, apellido_admin, telefono_admin, correo_admin, cargo
+    FROM administrador
+    WHERE rut_admin = %s
+    """
+    cursor.execute(query, (rut_admin,))
+    admin_data = cursor.fetchone()
+    conn.close()
+    return admin_data

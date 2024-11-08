@@ -32,7 +32,9 @@ def crear_menu(ventana):
         abrir_ventana_administradores()
 
     def go_to_mi_perfil():
-        print("Ir a Mi Perfil")
+        ventana.destroy()
+        from perfil import abrir_ventana_mi_perfil
+        abrir_ventana_mi_perfil()
         
     def cerrar_sesion():
         ventana.destroy()

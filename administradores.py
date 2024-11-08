@@ -103,8 +103,8 @@ def abrir_ventana_administradores():
         btn_guardar.grid(row=7, column=0, columnspan=2, pady=10)
 
     # Crear botón "Agregar Administrador"
-    btn_agregar_admin = tk.Button(ventana_administradores, text="Agregar Administrador", command=abrir_modal_agregar_admin)
-    btn_agregar_admin.pack(pady=20)
+    # btn_agregar_admin = tk.Button(ventana_administradores, text="Agregar Administrador", command=abrir_modal_agregar_admin)
+    # btn_agregar_admin.pack(pady=20)
 
     # Variables para manejar la paginación y búsqueda
     registros_por_pagina = 10
