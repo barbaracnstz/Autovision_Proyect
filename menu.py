@@ -26,14 +26,6 @@ def crear_menu(ventana):
         from reportes import abrir_ventana_reportes
         abrir_ventana_reportes()
         
-    def go_to_administradores():
-        ventana.destroy()
-        from administradores import abrir_ventana_administradores
-        abrir_ventana_administradores()
-
-    def go_to_mi_perfil():
-        print("Ir a Mi Perfil")
-        
     def cerrar_sesion():
         ventana.destroy()
         from inicio_sesion import abrir_ventana_inicio
@@ -51,14 +43,6 @@ def crear_menu(ventana):
     btn_reportes = tk.Button(menu_frame, text="📊 Reportes", command=go_to_reportes, font=button_font,
                              bg="#4db6ac", fg="white", bd=0, activebackground="white", activeforeground="black", padx=15)
     btn_reportes.pack(side=tk.LEFT, padx=10)
-
-    btn_administradores = tk.Button(menu_frame, text="🛠️ Administradores", command=go_to_administradores, font=button_font,
-                                    bg="#4db6ac", fg="white", bd=0, activebackground="white", activeforeground="black", padx=15)
-    btn_administradores.pack(side=tk.LEFT, padx=10)
-
-    btn_mi_perfil = tk.Button(menu_frame, text="👤 Mi Perfil", command=go_to_mi_perfil, font=button_font,
-                              bg="#4db6ac", fg="white", bd=0, activebackground="white", activeforeground="black", padx=15)
-    btn_mi_perfil.pack(side=tk.LEFT, padx=10)
     
     btn_cerrar_sesion = tk.Button(menu_frame, text="Cerrar Sesión", command=cerrar_sesion, font=button_font,
                               bg="#4db6ac", fg="white", bd=0, activebackground="white", activeforeground="black", padx=15)
