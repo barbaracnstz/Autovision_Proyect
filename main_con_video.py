@@ -35,7 +35,7 @@ coco_model = YOLO('yolov8m.pt')  # Prueba con un modelo más grande para mejor p
 detector_patente = YOLO('best.pt')  # Modelo para detección de patentes
 
 # Capturar Video desde la Webcam o archivo de video
-cap = cv2.VideoCapture('ejemplo.mp4')
+cap = cv2.VideoCapture(1)
 
 # Definir clases de vehículos según COCO (puedes ajustar las clases según necesites)
 autos = [2]  # Clases de vehículos en COCO: [Car, Motorcycle, Bus, Truck]

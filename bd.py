@@ -9,7 +9,7 @@ def conectar():
             host="localhost",
             database="autovision",
             user="postgres",
-            password="1234"
+            password="root"
         )
         return conexion_db
     except Exception as e:
@@ -59,34 +59,34 @@ def obtener_datos_residentes(self):
 ##CRUD
 
 # Función para insertar un nuevo residente en la base de datos
-def insertar_residente(rut_residente, dv_residente, nombre_residente, apellido_residente, fec_nac_residente, telefono_residente, no_depto_residente, patente_vehiculo):
-    conexion = conectar()
-    if conexion:
-        try:
-            cursor = conexion.cursor()
+# def insertar_residente(rut_residente, dv_residente, nombre_residente, apellido_residente, fec_nac_residente, telefono_residente, no_depto_residente, patente_vehiculo):
+#     conexion = conectar()
+#     if conexion:
+#         try:
+#             cursor = conexion.cursor()
             
-            # Insertar residente
-            query_residente = """
-            INSERT INTO residente (rut_residente, dv_residente, nombre_residente, apellido_residente, fec_nac_residente, telefono_residente, no_depto_residente)
-            VALUES (%s, %s, %s, %s, %s, %s, %s);
-            """
-            cursor.execute(query_residente, (rut_residente, dv_residente, nombre_residente, apellido_residente, fec_nac_residente, telefono_residente, no_depto_residente))
+#             # Insertar residente
+#             query_residente = """
+#             INSERT INTO residente (rut_residente, dv_residente, nombre_residente, apellido_residente, fec_nac_residente, telefono_residente, no_depto_residente)
+#             VALUES (%s, %s, %s, %s, %s, %s, %s);
+#             """
+#             cursor.execute(query_residente, (rut_residente, dv_residente, nombre_residente, apellido_residente, fec_nac_residente, telefono_residente, no_depto_residente))
             
-            # Insertar vehículo si se proporciona patente
-            if patente_vehiculo:
-                query_vehiculo = """
-                INSERT INTO vehiculo (patente_vehiculo, residente_rut_residente)
-                VALUES (%s, %s);
-                """
-                cursor.execute(query_vehiculo, (patente_vehiculo, rut_residente))
+#             # Insertar vehículo si se proporciona patente
+#             if patente_vehiculo:
+#                 query_vehiculo = """
+#                 INSERT INTO vehiculo (patente_vehiculo, residente_rut_residente)
+#                 VALUES (%s, %s);
+#                 """
+#                 cursor.execute(query_vehiculo, (patente_vehiculo, rut_residente))
             
-            # Commit y cierre de conexión
-            conexion.commit()
-            cursor.close()
-        except Exception as e:
-            print(f"Error al insertar residente o vehículo: {e}")
-        finally:
-            conexion.close()
+#             # Commit y cierre de conexión
+#             conexion.commit()
+#             cursor.close()
+#         except Exception as e:
+#             print(f"Error al insertar residente o vehículo: {e}")
+#         finally:
+#             conexion.close()
         
 def cargar_datos():
     conexion = conectar()  # Conexión a la base de datos
@@ -180,24 +180,130 @@ def cargar_datos_admins(texto_busqueda=""):
     conn.close()
     return registros
 
-###############################################REPORTESssssssssssssssssssssss
-# Función para establecer la conexión a la base de datos
-def conectar_base_datos():
-    try:
-        conn = psycopg2.connect(
-            host="localhost",
-            database="autovision",
-            user="postgres",
-            password="root"
-        )
-        return conn
-    except (Exception, psycopg2.Error) as error:
-        print("Error al conectar a la base de datos:", error)
+def admin(rut_admin):
+    """Cargar los datos del administrador específico desde la base de datos."""
+    conn = conectar()
+    if conn is None:
         return None
+
+    cursor = conn.cursor()
+    query = """
+    SELECT rut_admin, dv_admin, nombre_admin, apellido_admin, telefono_admin, correo_admin, cargo
+    FROM administrador
+    WHERE rut_admin = %s
+    """
+    cursor.execute(query, (rut_admin,))
+    admin_data = cursor.fetchone()
+    conn.close()
+    return admin_data
+
+
+###RESIDENTEEEEEEEEEEE
+# Función para ejecutar consultas SQL (con manejo de errores)
+def ejecutar_consulta(query, params=()):
+    try:
+        conn = conectar()  # Asegúrate de que conectar() esté configurada correctamente
+        cursor = conn.cursor()
+        cursor.execute(query, params)
+        resultado = cursor.fetchall()  # Usar fetchall() para obtener los resultados
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return resultado
+    except Exception as e:
+        print(f"Error al ejecutar consulta: {e}")
+        return None
+
+
+def insertar_residente(rut, dv, nombre, apellido, fecha_nac, telefono, no_depto, patente):
+    # Conectar a la base de datos
+    conn = conectar()
+    cursor = conn.cursor()
+
+    try:
+        # Insertar en la tabla residente
+        cursor.execute("""
+            INSERT INTO residente (rut_residente, dv_residente, nombre_residente, apellido_residente, fec_nac_residente, telefono_residente, no_depto_residente)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+        """, (rut, dv, nombre, apellido, fecha_nac, telefono, no_depto))
+
+        # Insertar en la tabla vehiculo
+        cursor.execute("""
+            INSERT INTO vehiculo (patente_vehiculo, residente_rut_residente)
+            VALUES (%s, %s)
+        """, (patente, rut))
+
+        # Confirmar cambios
+        conn.commit()
+
+    except Exception as e:
+        conn.rollback()  # Deshacer cambios en caso de error
+        raise e  # Propagar el error para manejarlo en residentes.py
+
+    finally:
+        cursor.close()
+        conn.close()
+        
+
+def obtener_residente_por_rut(rut):
+    conexion = conectar()  # Asegúrate de tener la conexión configurada
+    cursor = conexion.cursor()
+    consulta = """
+    SELECT rut_residente, dv_residente, nombre_residente, apellido_residente, 
+           fec_nac_residente, telefono_residente, no_depto_residente
+    FROM residente
+    WHERE rut_residente = %s;
+    """
+    try:
+        cursor.execute(consulta, (rut,))
+        residente = cursor.fetchone()
+        return residente
+    except Exception as e:
+        print("Error al obtener residente por RUT:", e)
+        return None
+    finally:
+        cursor.close()
+        conexion.close()
+
+def actualizar_residente(rut, telefono, no_depto):
+    conexion = conectar()  # Asegúrate de tener la conexión a la base de datos configurada
+    cursor = conexion.cursor()
+
+    consulta = """
+    UPDATE residente
+    SET telefono_residente = %s, no_depto_residente = %s
+    WHERE rut_residente = %s;
+    """
+    try:
+        cursor.execute(consulta, (telefono, no_depto, rut))
+        conexion.commit()
+        return True
+    except Exception as e:
+        print("Error al actualizar residente:", e)
+        conexion.rollback()
+        return False
+    finally:
+        cursor.close()
+        conexion.close()
+
+###############################################REPORTES
+# Función para establecer la conexión a la base de datos
+# def conectar_base_datos():
+#     try:
+#         conn = psycopg2.connect(
+#             host="localhost",
+#             database="autovision",
+#             user="postgres",
+#             password="root"
+#         )
+#         return conn
+#     except (Exception, psycopg2.Error) as error:
+#         print("Error al conectar a la base de datos:", error)
+#         return None
 
 # Función para obtener los datos según el tipo de reporte
 def obtener_datos(tipo_reporte):
-    conn = conectar_base_datos()
+    conn = conectar()
     cursor = conn.cursor()
     
     if tipo_reporte == "Multados":
@@ -241,7 +347,7 @@ def obtener_datos(tipo_reporte):
 
 # Función para obtener los datos entre fechas
 def obtener_datos_entre_fechas(tipo_reporte, fecha_desde, fecha_hasta):
-    conn = conectar_base_datos()
+    conn = conectar()
     cursor = conn.cursor()
     
     if tipo_reporte == "Multados":
@@ -279,3 +385,6 @@ def obtener_datos_entre_fechas(tipo_reporte, fecha_desde, fecha_hasta):
     datos = cursor.fetchall()
     cursor.close()  # Cerrar el cursor
     return datos
+
+
+
