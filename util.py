@@ -161,15 +161,13 @@ def validar_login(rut_admin, contrasena_admin):
     if conexion:
         cursor = conexion.cursor()
         # Consulta hacia la tabla del administrador
-        query = "SELECT * FROM administrador WHERE rut_admin = %s AND contrasena_admin = %s"
+        query = "SELECT rut_admin FROM administrador WHERE rut_admin = %s AND contrasena_admin = %s"
         cursor.execute(query, (rut_admin, contrasena_admin))
         resultado = cursor.fetchone()
         conexion.close()
         
         # Verificamos si se encontró un resultado (es decir, un administrador válido)
         if resultado:
-            return True
-        else:
-            return False
-    return False
+            return resultado[0]  # Retorna rut_admin si las credenciales son válidas
+    return None  
 

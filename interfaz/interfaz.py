@@ -1,5 +1,5 @@
 import tkinter as tk
-import sys
+from tkinter import ttk
 from PIL import Image, ImageTk  # Necesario para trabajar con imágenes PNG
 
 # Crear la ventana principal
@@ -22,7 +22,6 @@ header_frame.pack(fill='x')
 # Botón de "Iniciar Sesión"
 iniciar_sesion_button = tk.Button(header_frame, text="Iniciar Sesión", font=('Arial', 16), bg='#87CEEB', padx=10, pady=5)
 iniciar_sesion_button.place(x=20, y=20)
-
 
 # Texto de "Visita"
 visita_label = tk.Label(header_frame, text="Visita", font=('Arial', 36), bg='white')

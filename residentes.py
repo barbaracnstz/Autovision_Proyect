@@ -1,168 +1,309 @@
 import tkinter as tk
-from tkinter import ttk, messagebox
-from PIL import Image, ImageTk  # Para el logo
-from bd import obtener_residentes, editar_residente, eliminar_residente, agregar_residente
+from tkinter import messagebox
+# from bd import conectar, cargar_datos, insertar_residente, editar_residente
+from menu import crear_menu
+from bd import conectar,cargar_datos, ejecutar_consulta, insertar_residente, actualizar_residente, obtener_residente_por_rut
+#, obtener_residente_por_rut, actualizar_residente, eliminar_residente
+
+
 
 def abrir_ventana_residentes():
     ventana_residentes = tk.Toplevel()
-    ventana_residentes.title("Vista de Residentes")
+    ventana_residentes.title("Residentes - Administrador")
 
     # Obtener el tamaño de la pantalla y ajustar la ventana
     ancho_ventana = ventana_residentes.winfo_screenwidth()
     alto_ventana = ventana_residentes.winfo_screenheight()
     ventana_residentes.geometry(f"{ancho_ventana}x{alto_ventana}+0+0")
 
-    # Estilos para botones y widgets
-    style = ttk.Style()
-    style.configure('TButton', font=('Helvetica', 12), padding=10)
-    style.configure('TLabel', font=('Helvetica', 12))
+    # Calcular el centro de la pantalla
+    ancho_pantalla = ventana_residentes.winfo_screenwidth()
+    alto_pantalla = ventana_residentes.winfo_screenheight()
+    x = (ancho_pantalla // 2) - (ancho_ventana // 2)
+    y = (alto_pantalla // 2) - (alto_ventana // 2)
 
-    # Cargar logo
-    # imagen_logo = Image.open("logo.png")  # Asegúrate de tener un archivo llamado logo.png
-    # imagen_logo = imagen_logo.resize((100, 100), Image.ANTIALIAS)
-    # logo = ImageTk.PhotoImage(imagen_logo)
+    # Establecer la geometría de la ventana para centrarla
+    ventana_residentes.geometry(f"{ancho_ventana}x{alto_ventana}+{x}+{y}")
 
-    # label_logo = tk.Label(ventana_residentes, image=logo)
-    # label_logo.image = logo  # Mantener referencia para evitar que se elimine
-    # label_logo.grid(row=0, column=0, padx=20, pady=20)
+    # Crear el menú
+    crear_menu(ventana_residentes)
 
-    # Tabla con los residentes
-    columnas = ('rut', 'nombre_apellido', 'telefono', 'nro_depto', 'patente')
-    tabla_residentes = ttk.Treeview(ventana_residentes, columns=columnas, show='headings', height=20)
-    tabla_residentes.heading('rut', text='RUT')
-    tabla_residentes.heading('nombre_apellido', text='Nombre y Apellido')
-    tabla_residentes.heading('telefono', text='Teléfono')
-    tabla_residentes.heading('nro_depto', text='Nro. Depto')
-    tabla_residentes.heading('patente', text='Patente Vehículo')
-    tabla_residentes.grid(row=1, column=0, columnspan=4, padx=20, pady=10)
+    # Crear un Frame para los controles (barra de búsqueda y paginación)
+    frame_controles = tk.Frame(ventana_residentes)
+    frame_controles.pack(pady=20)
 
-    # Función para cargar los residentes en la tabla
-    def cargar_residentes():
-        for i in tabla_residentes.get_children():
-            tabla_residentes.delete(i)
+    label_titulo = tk.Label(frame_controles, text="Lista de Residentes", font=("Arial", 14, "bold"))
+    label_titulo.grid(row=0, column=0, columnspan=2, pady=10)
 
-        residentes = obtener_residentes()
-        for residente in residentes:
-            rut_completo = f"{residente['rut_residente']}-{residente['dv_residente']}"
-            nombre_completo = f"{residente['nombre_residente']} {residente['apellido_residente']}"
-            tabla_residentes.insert("", tk.END, values=(rut_completo, nombre_completo, residente['telefono_residente'], residente['no_depto_residente'], residente['patente_vehiculo']))
+    # Crear barra de búsqueda
+    tk.Label(frame_controles, text="Buscar:").grid(row=1, column=0, padx=10)
+    entry_buscar = tk.Entry(frame_controles, width=30)
+    entry_buscar.grid(row=1, column=1, padx=10)
 
-    # Llamar a la función para cargar residentes
-    cargar_residentes()
+    # Variables para manejar la paginación y búsqueda
+    registros_por_pagina = 10
+    pagina_actual = 0
+    texto_busqueda = ""  # Variable para almacenar el texto de búsqueda
 
-    # Ventana emergente para editar residente
-    def abrir_ventana_editar(residente):
-        ventana_editar = tk.Toplevel(ventana_residentes)
-        ventana_editar.title("Editar Residente")
-        ventana_editar.geometry("400x300")
+    # Función para abrir el modal de agregar residente
+    def abrir_modal_agregar_residente():
+        modal = tk.Toplevel()
+        modal.title("Agregar Residente")
 
-        rut, nombre_apellido, telefono, nro_depto, patente = residente
+        # Crear formulario para ingresar los datos
+        label_rut = tk.Label(modal, text="RUT Residente")
+        label_rut.grid(row=0, column=0, padx=10, pady=10)
+        entry_rut = tk.Entry(modal)
+        entry_rut.grid(row=0, column=1, padx=10)
 
-        ttk.Label(ventana_editar, text="Teléfono:").pack()
-        entrada_telefono = ttk.Entry(ventana_editar)
-        entrada_telefono.insert(0, telefono)
-        entrada_telefono.pack()
+        label_dv = tk.Label(modal, text="DV Residente")
+        label_dv.grid(row=1, column=0, padx=10)
+        entry_dv = tk.Entry(modal)
+        entry_dv.grid(row=1, column=1, padx=10)
 
-        ttk.Label(ventana_editar, text="Nro. Depto:").pack()
-        entrada_nro_depto = ttk.Entry(ventana_editar)
-        entrada_nro_depto.insert(0, nro_depto)
-        entrada_nro_depto.pack()
+        label_nombre = tk.Label(modal, text="Nombre")
+        label_nombre.grid(row=2, column=0, padx=10)
+        entry_nombre = tk.Entry(modal)
+        entry_nombre.grid(row=2, column=1, padx=10)
 
-        ttk.Label(ventana_editar, text="Patente:").pack()
-        entrada_patente = ttk.Entry(ventana_editar)
-        entrada_patente.insert(0, patente)
-        entrada_patente.pack()
+        label_apellido = tk.Label(modal, text="Apellido")
+        label_apellido.grid(row=3, column=0, padx=10)
+        entry_apellido = tk.Entry(modal)
+        entry_apellido.grid(row=3, column=1, padx=10)
 
-        def guardar_cambios():
-            nuevo_telefono = entrada_telefono.get()
-            nuevo_nro_depto = entrada_nro_depto.get()
-            nueva_patente = entrada_patente.get()
-            rut_residente = rut.split("-")[0]
+        label_fec_nac = tk.Label(modal, text="Fecha Nacimiento")
+        label_fec_nac.grid(row=4, column=0, padx=10)
+        entry_fec_nac = tk.Entry(modal)
+        entry_fec_nac.grid(row=4, column=1, padx=10)
 
-            editar_residente(rut_residente, nuevo_telefono, nuevo_nro_depto, nueva_patente)
-            messagebox.showinfo("Éxito", "Residente editado correctamente")
-            ventana_editar.destroy()
-            cargar_residentes()
+        label_telefono = tk.Label(modal, text="Teléfono")
+        label_telefono.grid(row=5, column=0, padx=10)
+        entry_telefono = tk.Entry(modal)
+        entry_telefono.grid(row=5, column=1, padx=10)
 
-        ttk.Button(ventana_editar, text="Guardar Cambios", command=guardar_cambios).pack(pady=5)
-        ttk.Button(ventana_editar, text="Cancelar", command=ventana_editar.destroy).pack(pady=5)
+        label_no_depto = tk.Label(modal, text="Nº Departamento")
+        label_no_depto.grid(row=6, column=0, padx=10)
+        entry_no_depto = tk.Entry(modal)
+        entry_no_depto.grid(row=6, column=1, padx=10)
 
-    # Funciones para los botones de editar, eliminar y agregar
-    def editar_residente_callback():
-        item_seleccionado = tabla_residentes.selection()
-        if item_seleccionado:
-            residente_seleccionado = tabla_residentes.item(item_seleccionado)['values']
-            abrir_ventana_editar(residente_seleccionado)
+        label_patente = tk.Label(modal, text="Patente Vehículo")
+        label_patente.grid(row=7, column=0, padx=10)
+        entry_patente = tk.Entry(modal)
+        entry_patente.grid(row=7, column=1, padx=10)
+
+        def guardar_residente():
+            # Obtener los datos ingresados en el formulario
+            rut = entry_rut.get()
+            dv = entry_dv.get()
+            nombre = entry_nombre.get()
+            apellido = entry_apellido.get()
+            fecha_nac = entry_fec_nac.get()
+            telefono = entry_telefono.get()
+            no_depto = entry_no_depto.get()
+            patente = entry_patente.get()
+
+            # Verificar que todos los campos estén llenos
+            if not (rut and dv and nombre and apellido and fecha_nac and telefono and no_depto and patente):
+                messagebox.showerror("Error", "Todos los campos son obligatorios.")
+                return
+
+            # Llamar a la función insertar_residente de bd.py para agregar el nuevo residente
+            try:
+                insertar_residente(rut, dv, nombre, apellido, fecha_nac, telefono, no_depto, patente)
+                messagebox.showinfo("Éxito", "Residente agregado correctamente.")
+                modal.destroy()  # Cerrar la ventana modal después de guardar
+                cargar_datos_tabla()  # Actualizar la tabla de residentes
+            except Exception as e:
+                messagebox.showerror("Error", f"No se pudo agregar el residente: {str(e)}")
+
+
+
+        # Botón para guardar
+        btn_guardar = tk.Button(modal, text="Guardar", command=guardar_residente)
+        btn_guardar.grid(row=8, column=0, columnspan=2, pady=10)
+        
+    def editar_registro(rut):
+        # Obtener datos del residente usando el RUT
+        residente = obtener_residente_por_rut(rut)  # Asegúrate de que esta función esté implementada en bd.py
+
+        if not residente:
+            messagebox.showerror("Error", "No se encontró el residente.")
+            return
+
+        # Crear un modal para editar el residente
+        modal_editar = tk.Toplevel()
+        modal_editar.title("Editar Residente")
+
+        # Mostrar el RUT (solo lectura)
+        label_rut = tk.Label(modal_editar, text="RUT Residente")
+        label_rut.grid(row=0, column=0, padx=10, pady=10)
+        entry_rut = tk.Entry(modal_editar, state="readonly")
+        entry_rut.grid(row=0, column=1, padx=10)
+        entry_rut.insert(0, residente[0])  # Asumiendo que residente[0] es el RUT
+
+        # Mostrar el DV (solo lectura)
+        label_dv = tk.Label(modal_editar, text="DV Residente")
+        label_dv.grid(row=1, column=0, padx=10)
+        entry_dv = tk.Entry(modal_editar, state="readonly")
+        entry_dv.grid(row=1, column=1, padx=10)
+        entry_dv.insert(0, residente[1])  # Asumiendo que residente[1] es el DV
+
+        # Mostrar el Nombre (solo lectura)
+        label_nombre = tk.Label(modal_editar, text="Nombre")
+        label_nombre.grid(row=2, column=0, padx=10)
+        entry_nombre = tk.Entry(modal_editar, state="readonly")
+        entry_nombre.grid(row=2, column=1, padx=10)
+        entry_nombre.insert(0, residente[2])  # Asumiendo que residente[2] es el Nombre
+
+        # Mostrar el Apellido (solo lectura)
+        label_apellido = tk.Label(modal_editar, text="Apellido")
+        label_apellido.grid(row=3, column=0, padx=10)
+        entry_apellido = tk.Entry(modal_editar, state="readonly")
+        entry_apellido.grid(row=3, column=1, padx=10)
+        entry_apellido.insert(0, residente[3])  # Asumiendo que residente[3] es el Apellido
+
+        # Mostrar la Fecha de Nacimiento (solo lectura)
+        label_fec_nac = tk.Label(modal_editar, text="Fecha Nacimiento")
+        label_fec_nac.grid(row=4, column=0, padx=10)
+        entry_fec_nac = tk.Entry(modal_editar, state="readonly")
+        entry_fec_nac.grid(row=4, column=1, padx=10)
+        entry_fec_nac.insert(0, residente[4])  # Asumiendo que residente[4] es la Fecha de Nacimiento
+
+        # Campo editable para el Teléfono
+        label_telefono = tk.Label(modal_editar, text="Teléfono")
+        label_telefono.grid(row=5, column=0, padx=10)
+        entry_telefono = tk.Entry(modal_editar)
+        entry_telefono.grid(row=5, column=1, padx=10)
+        entry_telefono.insert(0, residente[5])  # Asumiendo que residente[5] es el Teléfono
+
+        # Campo editable para el Nº Departamento
+        label_no_depto = tk.Label(modal_editar, text="Nº Departamento")
+        label_no_depto.grid(row=6, column=0, padx=10)
+        entry_no_depto = tk.Entry(modal_editar)
+        entry_no_depto.grid(row=6, column=1, padx=10)
+        entry_no_depto.insert(0, residente[6])  # Asumiendo que residente[6] es el Nº Departamento
+
+        # Función para guardar los cambios
+        def guardar_cambios_residente():
+            nuevo_telefono = entry_telefono.get()
+            nuevo_no_depto = entry_no_depto.get()
+
+            # Validar que los campos no estén vacíos
+            if not nuevo_telefono or not nuevo_no_depto:
+                messagebox.showwarning("Advertencia", "Por favor, complete todos los campos.")
+                return
+
+            # Actualizar en la base de datos
+            actualizado = actualizar_residente(rut, nuevo_telefono, nuevo_no_depto)  # Asegúrate de que esta función esté implementada en bd.py
+            if actualizado:
+                messagebox.showinfo("Éxito", "Residente actualizado correctamente.")
+                modal_editar.destroy()  # Cierra el modal después de guardar
+                cargar_datos_tabla()  # Recarga los datos de la tabla principal
+            else:
+                messagebox.showerror("Error", "No se pudo actualizar el residente.")
+
+        # Botón para guardar cambios
+        btn_guardar = tk.Button(modal_editar, text="Guardar Cambios", command=guardar_cambios_residente)
+        btn_guardar.grid(row=7, column=0, columnspan=2, pady=10)
+
+
+
+
+    # Crear botón "Agregar residente"
+    btn_agregar_residente = tk.Button(ventana_residentes, text="Agregar Residente", command=abrir_modal_agregar_residente)
+    btn_agregar_residente.pack(pady=20)
+
+    # Función para actualizar el texto de búsqueda y recargar la tabla
+    def actualizar_busqueda(event=None):
+        nonlocal texto_busqueda
+        texto_busqueda = entry_buscar.get().lower()  # Obtener texto de búsqueda en minúsculas
+        cargar_datos_tabla()  # Recargar la tabla con el filtro aplicado
+
+    # Asociar la tecla de búsqueda con la función para actualizar
+    entry_buscar.bind("<KeyRelease>", actualizar_busqueda)  # Actualiza la búsqueda al presionar una tecla
+
+    # Función para cargar datos en la tabla con paginación y búsqueda
+    def cargar_datos_tabla():
+        # Limpiar la tabla antes de cargar nuevos datos
+        for widget in frame_tabla.winfo_children():
+            widget.grid_forget()
+
+        # Encabezados de la tabla
+        for i, encabezado in enumerate(encabezados):
+            label = tk.Label(frame_tabla, text=encabezado, font=('Arial', 10, 'bold'), borderwidth=1, relief="solid", width=15)
+            label.grid(row=0, column=i, sticky="nsew")
+
+        # Obtener los datos de la base de datos
+        registros = cargar_datos()
+
+        # Filtrar los registros si hay texto de búsqueda
+        if texto_busqueda:
+            registros = [r for r in registros if any(texto_busqueda in str(dato).lower() for dato in r)]
+
+        # Calcular los registros a mostrar para la página actual
+        inicio = pagina_actual * registros_por_pagina
+        fin = inicio + registros_por_pagina
+        registros_pagina = registros[inicio:fin]
+
+        # Añadir datos a la tabla
+        for row_num, registro in enumerate(registros_pagina, start=1):
+            # RUT, NOMBRE, TELEFONO, NRO DEPTO, PATENTE
+            for col_num, dato in enumerate(registro):
+                label = tk.Label(frame_tabla, text=dato, borderwidth=1, relief="solid", width=15)
+                label.grid(row=row_num, column=col_num, sticky="nsew")
+
+            # Botón EDITAR
+            btn_editar = tk.Button(frame_tabla, text="EDITAR", bg="yellow", command=lambda rut=registro[0]: editar_registro(rut))
+            btn_editar.grid(row=row_num, column=5, sticky="nsew")
+
+
+            # Botón ELIMINAR
+            btn_eliminar = tk.Button(frame_tabla, text="ELIMINAR", bg="red", fg="white", command=lambda rut=registro[0]: eliminar_registro(rut))
+            btn_eliminar.grid(row=row_num, column=6, sticky="nsew")
+
+        # Actualizar botones de paginación
+        actualizar_botones_paginacion(len(registros))
+
+    # Función para actualizar los botones de paginación
+    def actualizar_botones_paginacion(total_registros):
+        # Verificar si hay una página anterior
+        if pagina_actual > 0:
+            btn_anterior.config(state="normal")
         else:
-            messagebox.showerror("Error", "Seleccione un residente para editar")
+            btn_anterior.config(state="disabled")
 
-    def eliminar_residente_callback():
-        item_seleccionado = tabla_residentes.selection()
-        if item_seleccionado:
-            residente_seleccionado = tabla_residentes.item(item_seleccionado)['values']
-            if messagebox.askyesno("Eliminar", f"¿Está seguro de eliminar a {residente_seleccionado[1]}?"):
-                rut_residente = residente_seleccionado[0].split("-")[0]
-                eliminar_residente(rut_residente)
-                cargar_residentes()
+        # Verificar si hay una página siguiente
+        if (pagina_actual + 1) * registros_por_pagina < total_registros:
+            btn_siguiente.config(state="normal")
         else:
-            messagebox.showerror("Error", "Seleccione un residente para eliminar")
+            btn_siguiente.config(state="disabled")
 
-    def abrir_ventana_agregar():
-        ventana_agregar = tk.Toplevel(ventana_residentes)
-        ventana_agregar.title("Agregar Residente")
-        ventana_agregar.geometry("400x400")
+    # Crear la tabla de datos
+    frame_tabla = tk.Frame(ventana_residentes)
+    frame_tabla.pack(pady=20)
 
-        campos = ['RUT', 'DV', 'Nombre', 'Apellido', 'Fecha Nacimiento', 'Teléfono', 'Nro. Depto', 'Patente Vehículo']
-        entradas = {}
-        for campo in campos:
-            ttk.Label(ventana_agregar, text=f"{campo}:").pack(pady=5)
-            entrada = ttk.Entry(ventana_agregar)
-            entrada.pack(pady=5)
-            entradas[campo] = entrada
+    # Encabezados de la tabla
+    encabezados = ["RUT", "Nombre", "Teléfono", "Depto", "Patente", "Acción", "Acción"]
 
-        def guardar_nuevo_residente():
-            rut = entradas['RUT'].get()
-            dv = entradas['DV'].get()
-            nombre = entradas['Nombre'].get()
-            apellido = entradas['Apellido'].get()
-            fecha = entradas['Fecha Nacimiento'].get()
-            telefono = entradas['Teléfono'].get()
-            nro_depto = entradas['Nro. Depto'].get()
-            patente = entradas['Patente Vehículo'].get()
+    # Crear los botones de paginación
+    frame_paginacion = tk.Frame(ventana_residentes)
+    frame_paginacion.pack(pady=20)
 
-            agregar_residente(rut, dv, nombre, apellido, fecha, telefono, nro_depto, patente)
-            messagebox.showinfo("Éxito", "Residente agregado correctamente")
-            ventana_agregar.destroy()
-            cargar_residentes()
+    btn_anterior = tk.Button(frame_paginacion, text="Anterior", command=lambda: cambiar_pagina(-1))
+    btn_anterior.grid(row=0, column=0)
 
-        ttk.Button(ventana_agregar, text="Guardar", command=guardar_nuevo_residente).pack(pady=10)
-        ttk.Button(ventana_agregar, text="Cancelar", command=ventana_agregar.destroy).pack(pady=10)
+    btn_siguiente = tk.Button(frame_paginacion, text="Siguiente", command=lambda: cambiar_pagina(1))
+    btn_siguiente.grid(row=0, column=1)
 
-    # Barra de búsqueda
-    def buscar_residente():
-        criterio = entrada_busqueda.get().lower()
-        for item in tabla_residentes.get_children():
-            residente = tabla_residentes.item(item)['values']
-            nombre_completo = residente[1].lower()
-            nro_depto = str(residente[3])
-            if criterio in nombre_completo or criterio in nro_depto:
-                tabla_residentes.selection_set(item)
-                break
+    # Función para cambiar de página
+    def cambiar_pagina(direccion):
+        nonlocal pagina_actual
+        pagina_actual += direccion
+        cargar_datos_tabla()
 
-    ttk.Label(ventana_residentes, text="Buscar:").grid(row=0, column=1, padx=10, pady=10)
-    entrada_busqueda = ttk.Entry(ventana_residentes, width=30)
-    entrada_busqueda.grid(row=0, column=2, padx=10, pady=10)
-    ttk.Button(ventana_residentes, text="Buscar", command=buscar_residente).grid(row=0, column=3, padx=10, pady=10)
+    # Cargar los datos iniciales
+    cargar_datos_tabla()
 
-    # Botones de acción
-    ttk.Button(ventana_residentes, text="Editar", command=editar_residente_callback).grid(row=2, column=0, padx=10, pady=10)
-    ttk.Button(ventana_residentes, text="Eliminar", command=eliminar_residente_callback).grid(row=2, column=1, padx=10, pady=10)
-    ttk.Button(ventana_residentes, text="Agregar Residente", command=abrir_ventana_agregar).grid(row=2, column=2, padx=10, pady=10)
-
-    # Función para cerrar sesión
-    def cerrar_sesion():
-        ventana_residentes.destroy()
-        import inicio_sesion  # Dirige a la página de inicio de sesión
-
-    # Botón de cerrar sesión
-    ttk.Button(ventana_residentes, text="Cerrar Sesión", command=cerrar_sesion).grid(row=2, column=2, padx=10, pady=10)
+# Si estás ejecutando este script directamente, se ejecutará la siguiente línea:
+if __name__ == "__main__":
+    abrir_ventana_residentes()
