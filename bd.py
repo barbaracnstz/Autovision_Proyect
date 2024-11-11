@@ -215,66 +215,6 @@ def ejecutar_consulta(query, params=()):
         return None
 
 
-
-# def insertar_residente(conn, rut_residente, dv_residente, nombre_residente, apellido_residente, fec_nac_residente, telefono_residente, no_depto_residente, patente_vehiculo):
-#     # Primero, verificamos si ya existe un residente con ese rut
-#     consulta_existente_residente = """
-#     SELECT COUNT(*) FROM residente WHERE rut_residente = %s
-#     """
-#     resultado_residente = ejecutar_consulta(consulta_existente_residente, (rut_residente,))
-
-#     if resultado_residente is None or len(resultado_residente) == 0:
-#         raise ValueError(f"Error al verificar el residente. No se obtuvo respuesta de la base de datos.")
-    
-#     if resultado_residente[0][0] > 0:
-#         raise ValueError(f"Ya existe un residente con el RUT {rut_residente}.")
-    
-#     # Si el residente no existe, insertamos en la tabla residente
-#     consulta_insertar_residente = """
-#     INSERT INTO residente (rut_residente, dv_residente, nombre_residente, apellido_residente, fec_nac_residente, telefono_residente, no_depto_residente)
-#     VALUES (%s, %s, %s, %s, %s, %s, %s)
-#     """
-    
-#     try:
-#         # Ejecutamos la inserción del residente
-#         ejecutar_consulta(consulta_insertar_residente, (rut_residente, dv_residente, nombre_residente, apellido_residente, fec_nac_residente, telefono_residente, no_depto_residente))
-
-#         # Confirmar la transacción
-#         conn.commit()  # Confirmamos la transacción
-#         print(f"Residente {rut_residente} insertado correctamente en la tabla residente.")
-
-#         # Ahora, si se proporcionó una patente, asociamos el vehículo
-#         if patente_vehiculo:
-#             consulta_existente_vehiculo = """
-#             SELECT COUNT(*) FROM vehiculo WHERE patente_vehiculo = %s
-#             """
-#             resultado_vehiculo = ejecutar_consulta(consulta_existente_vehiculo, (patente_vehiculo,))
-            
-#             if resultado_vehiculo is None or len(resultado_vehiculo) == 0:
-#                 raise ValueError(f"Error al verificar la patente del vehículo. No se obtuvo respuesta de la base de datos.")
-            
-#             if resultado_vehiculo[0][0] > 0:
-#                 raise ValueError(f"Ya existe un vehículo con la patente {patente_vehiculo} asociado a otro residente.")
-            
-#             # Insertar en la tabla vehiculo, asociando el vehículo al rut_residente
-#             consulta_insertar_vehiculo = """
-#             INSERT INTO vehiculo (patente_vehiculo, residente_rut_residente)
-#             VALUES (%s, %s)
-#             """
-#             ejecutar_consulta(consulta_insertar_vehiculo, (patente_vehiculo, rut_residente))
-#             print(f"Vehículo con patente {patente_vehiculo} asociado correctamente al residente {rut_residente}.")
-    
-#     except Exception as e:
-#         # Revertir cualquier cambio si ocurre un error
-#         conn.rollback()
-#         print(f"Error al ejecutar consulta: {e}")
-#         raise ValueError(f"Error al insertar el residente o el vehículo: {str(e)}")
-    
-#     finally:
-#         conn.close()  # Cerrar la conexión al final
-
-
-
 def insertar_residente(rut, dv, nombre, apellido, fecha_nac, telefono, no_depto, patente):
     # Conectar a la base de datos
     conn = conectar()
@@ -346,36 +286,105 @@ def actualizar_residente(rut, telefono, no_depto):
         cursor.close()
         conexion.close()
 
+###############################################REPORTES
+# Función para establecer la conexión a la base de datos
+# def conectar_base_datos():
+#     try:
+#         conn = psycopg2.connect(
+#             host="localhost",
+#             database="autovision",
+#             user="postgres",
+#             password="root"
+#         )
+#         return conn
+#     except (Exception, psycopg2.Error) as error:
+#         print("Error al conectar a la base de datos:", error)
+#         return None
+
+# Función para obtener los datos según el tipo de reporte
+def obtener_datos(tipo_reporte):
+    conn = conectar()
+    cursor = conn.cursor()
+    
+    if tipo_reporte == "Multados":
+        cursor.execute("""
+                    SELECT r.rut_residente,
+                            r.nombre_residente,
+                            r.apellido_residente,
+                            vh.no_depto_visita_historica,
+                            vh.rut_visita_historica,
+                            vh.nombre_visita_historica,
+                            vh.apellido_visita_historica,
+                            vh.patente_visita_historica,
+                            vh.momento_ingreso_historico,
+                            vh.momento_salida_historico
+                    FROM visita_historico vh
+                    JOIN visita v ON vh.visita_rut_visita = v.rut_visita
+                    JOIN residente r ON v.residente_rut_residente = r.rut_residente
+                    WHERE vh.multado = TRUE;""")
+    elif tipo_reporte == "Residentes":
+        cursor.execute("""
+            SELECT r.rut_residente, r.dv_residente, r.nombre_residente, r.apellido_residente, 
+                   r.fec_nac_residente, r.telefono_residente, r.no_depto_residente, 
+                   v.patente_vehiculo
+            FROM residente r
+            LEFT JOIN vehiculo v ON r.rut_residente = v.residente_rut_residente
+        """)
+    elif tipo_reporte == "Visitas Diarias":
+        cursor.execute("""
+            SELECT rut_visita_historica,nombre_visita_historica,apellido_visita_historica,no_depto_visita_historica AS departamento,
+                   patente_visita_historica
+            FROM visita_historico
+            WHERE DATE(momento_ingreso_historico) = CURRENT_DATE;
+        """)
+    else:
+        print("Tipo de reporte inválido")
+        return []
+    
+    datos = cursor.fetchall()
+    cursor.close()  # Cerrar el cursor
+    return datos
+
+# Función para obtener los datos entre fechas
+def obtener_datos_entre_fechas(tipo_reporte, fecha_desde, fecha_hasta):
+    conn = conectar()
+    cursor = conn.cursor()
+    
+    if tipo_reporte == "Multados":
+        cursor.execute("""
+            SELECT r.rut_residente,
+                            r.nombre_residente,
+                            r.apellido_residente,
+                            vh.no_depto_visita_historica,
+                            vh.rut_visita_historica,
+                            vh.nombre_visita_historica,
+                            vh.apellido_visita_historica,
+                            vh.patente_visita_historica,
+                            vh.momento_ingreso_historico,
+                            vh.momento_salida_historico
+                    FROM visita_historico vh
+                    JOIN visita v ON vh.visita_rut_visita = v.rut_visita
+                    JOIN residente r ON v.residente_rut_residente = r.rut_residente
+                    WHERE vh.multado = TRUE
+            AND momento_ingreso_historico >= %s 
+            AND momento_ingreso_historico <= %s
+        """, (fecha_desde, fecha_hasta))
+    elif tipo_reporte == "Residentes":
+        cursor.execute("""
+            SELECT r.rut_residente, r.dv_residente, r.nombre_residente, r.apellido_residente, 
+                   r.fec_nac_residente, r.telefono_residente, r.no_depto_residente, 
+                   v.patente_vehiculo
+            FROM residente r
+            LEFT JOIN vehiculo v ON r.rut_residente = v.residente_rut_residente
+            WHERE r.fecha_registro >= %s AND r.fecha_registro <= %s
+        """, (fecha_desde, fecha_hasta))
+    else:
+        print("Tipo de reporte inválido")
+        return []
+    
+    datos = cursor.fetchall()
+    cursor.close()  # Cerrar el cursor
+    return datos
 
 
 
-
-
-
-
-# Función para obtener los datos de un residente por su RUT
-# def obtener_residente_por_rut(rut):
-#     consulta = "SELECT * FROM residentes WHERE rut = %s"
-#     conexion = conectar()
-#     cursor = conexion.cursor()
-#     cursor.execute(consulta, (rut,))
-#     residente = cursor.fetchone()
-#     cursor.close()
-#     conexion.close()
-#     return residente
-
-# Función para actualizar los datos de un residente
-# def actualizar_residente(rut, nuevos_datos):
-#     # Construir la consulta UPDATE dinámica basada en los campos a actualizar
-#     # ... (ejemplo: actualizar nombre y apellido)
-#     consulta = """
-#     UPDATE residentes
-#     SET nombre = %s, apellido = %s
-#     WHERE rut = %s
-#     """
-#     ejecutar_consulta(consulta, (nuevos_datos['nombre'], nuevos_datos['apellido'], rut))
-
-# Función para eliminar un residente
-# def eliminar_residente(rut):
-#     consulta = "DELETE FROM residentes WHERE rut = %s"
-#     ejecutar_consulta(consulta, (rut,))
