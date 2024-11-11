@@ -1,3 +1,20 @@
+
+CREATE TABLE estacionamiento (
+    id SERIAL PRIMARY KEY,
+    numero_estacionamiento INTEGER UNIQUE NOT NULL,
+    estado VARCHAR(10) NOT NULL CHECK (estado IN ('libre', 'ocupado')),
+    id_visita INTEGER,
+    momento_ingreso TIMESTAMPTZ,
+    FOREIGN KEY (id_visita) REFERENCES visita(rut_visita)
+);
+
+-- Insertar registros iniciales en la tabla estacionamiento
+INSERT INTO estacionamiento (numero_estacionamiento, estado) VALUES
+    (1, 'libre'),
+    (2, 'libre'),
+    (3, 'libre');
+
+
 -- Insertar datos en la tabla residente
 INSERT INTO residente (rut_residente, dv_residente, nombre_residente, apellido_residente, fec_nac_residente, telefono_residente, no_depto_residente) VALUES
     (19345678, 'K', 'Juan', 'Perez', '1990-05-14', 989456789, 103),
