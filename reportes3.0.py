@@ -185,7 +185,7 @@ def generar_reporte_excel():
     libro.save(ruta_archivo)
     messagebox.showinfo("Éxito", "Reporte generado correctamente.")
 
-# Crear la ventana principal
+# Crear la ventana principal revisar
 root = tk.Tk()
 root.title("Sistema de Reportes")
 root.geometry("1920x1020")  # Ajusta el tamaño según tus necesidades
