@@ -9,7 +9,7 @@ from menu import crear_menu
 
 
 def abrir_ventana_administrador():
-    ventana_administrador = tk.Toplevel()  # Utiliza tk en minúsculas para acceder a Toplevel
+    ventana_administrador = tk.Toplevel()
     ventana_administrador.title("Dashboard - Administrador")    
     
     # Obtener el tamaño de la pantalla y ajustar la ventana
