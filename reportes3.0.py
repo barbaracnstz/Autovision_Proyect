@@ -49,6 +49,13 @@ def obtener_datos(tipo_reporte):
             FROM residente r
             LEFT JOIN vehiculo v ON r.rut_residente = v.residente_rut_residente
         """)
+    elif tipo_reporte == "Visitas Diarias":
+        cursor.execute("""
+            SELECT rut_visita_historica,nombre_visita_historica,apellido_visita_historica,no_depto_visita_historica AS departamento,
+                   patente_visita_historica
+            FROM visita_historico
+            WHERE DATE(momento_ingreso_historico) = CURRENT_DATE;
+        """)
     else:
         print("Tipo de reporte inválido")
         return []
@@ -118,6 +125,9 @@ def actualizar_treeview(tipo_reporte, fecha_desde=None, fecha_hasta=None):
         columns = ('rut_residente', 'dv_residente', 'nombre_residente', 'apellido_residente', 
                    'fec_nac_residente', 'telefono_residente', 'no_depto_residente', 
                    'patente_vehiculo')
+    elif tipo_reporte == "Visitas Diarias":
+        columns = ('RUT VISITA', 'NOMBRE', 'APELLIDO', 'DEPARTAMENTO', 
+                   'PATENTE')
 
     # Configurar el Treeview con las nuevas columnas
     tree['columns'] = columns
@@ -197,7 +207,9 @@ tipo_reporte_var.set("Multados")  # Valor por defecto
 titulo_label = tk.Label(root, text="REPORTES", font=("Helvetica", 16), bg='white')  # Cambiar bg según la imagen
 titulo_label.pack(pady=10)
 
-tipo_reporte_menu = ttk.Combobox(root, textvariable=tipo_reporte_var, values=["Multados", "Residentes"])
+titulo_tipo = tk.Label(root, text="Seleccione el tipo de reporte:", bg='white')
+titulo_tipo.pack(pady=5)
+tipo_reporte_menu = ttk.Combobox(root, textvariable=tipo_reporte_var, values=["Multados", "Residentes" ,"Visitas Diarias"])
 tipo_reporte_menu.pack(pady=5)
 
 # Crear entradas de fecha
