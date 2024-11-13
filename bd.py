@@ -116,7 +116,7 @@ def conectar():
             host="localhost",
             database="autovision",
             user="postgres",
-            password="1234"
+            password="root"
         )
         return conexion_db
     except Exception as e:
@@ -309,12 +309,12 @@ def obtener_datos(tipo_reporte):
     if tipo_reporte == "Multados":
         cursor.execute("""
                     SELECT r.rut_residente,
-                            r.nombre_residente,
-                            r.apellido_residente,
+                            CONCAT(r.nombre_residente,' ',
+                            r.apellido_residente),
                             vh.no_depto_visita_historica,
                             vh.rut_visita_historica,
-                            vh.nombre_visita_historica,
-                            vh.apellido_visita_historica,
+                            CONCAT(vh.nombre_visita_historica,' ',
+                            vh.apellido_visita_historica),
                             vh.patente_visita_historica,
                             vh.momento_ingreso_historico,
                             vh.momento_salida_historico
@@ -324,7 +324,7 @@ def obtener_datos(tipo_reporte):
                     WHERE vh.multado = TRUE;""")
     elif tipo_reporte == "Residentes":
         cursor.execute("""
-            SELECT r.rut_residente, r.dv_residente, r.nombre_residente, r.apellido_residente, 
+            SELECT CONCAT(r.rut_residente, '-', r.dv_residente), CONCAT(r.nombre_residente, ' ', r.apellido_residente), 
                    r.fec_nac_residente, r.telefono_residente, r.no_depto_residente, 
                    v.patente_vehiculo
             FROM residente r
@@ -332,7 +332,7 @@ def obtener_datos(tipo_reporte):
         """)
     elif tipo_reporte == "Visitas Diarias":
         cursor.execute("""
-            SELECT rut_visita_historica,nombre_visita_historica,apellido_visita_historica,no_depto_visita_historica AS departamento,
+            SELECT rut_visita_historica,CONCAT(nombre_visita_historica,' ',apellido_visita_historica),no_depto_visita_historica AS departamento,
                    patente_visita_historica
             FROM visita_historico
             WHERE DATE(momento_ingreso_historico) = CURRENT_DATE;
@@ -353,12 +353,12 @@ def obtener_datos_entre_fechas(tipo_reporte, fecha_desde, fecha_hasta):
     if tipo_reporte == "Multados":
         cursor.execute("""
             SELECT r.rut_residente,
-                            r.nombre_residente,
-                            r.apellido_residente,
+                            CONCAT(r.nombre_residente,' ',
+                            r.apellido_residente),
                             vh.no_depto_visita_historica,
                             vh.rut_visita_historica,
-                            vh.nombre_visita_historica,
-                            vh.apellido_visita_historica,
+                            CONCAT(vh.nombre_visita_historica,' ',
+                            vh.apellido_visita_historica),
                             vh.patente_visita_historica,
                             vh.momento_ingreso_historico,
                             vh.momento_salida_historico
@@ -371,7 +371,7 @@ def obtener_datos_entre_fechas(tipo_reporte, fecha_desde, fecha_hasta):
         """, (fecha_desde, fecha_hasta))
     elif tipo_reporte == "Residentes":
         cursor.execute("""
-            SELECT r.rut_residente, r.dv_residente, r.nombre_residente, r.apellido_residente, 
+            SELECT CONCAT(r.rut_residente, '-', r.dv_residente), CONCAT(r.nombre_residente, ' ', r.apellido_residente), 
                    r.fec_nac_residente, r.telefono_residente, r.no_depto_residente, 
                    v.patente_vehiculo
             FROM residente r
