@@ -27,29 +27,30 @@ def abrir_ventana_reportes():
         
         # Configurar las columnas según el tipo de reporte
         if tipo_reporte == "Multados":
-            columns = ('Rut Residente', 'Nombre', 'Apellido','nro departamento','rut visita', 'Nombre Visita', 'Apellido Visita' 
-                    , 'Patente Visita', 
+            columns = ('RUT RESIDENTE', 'NOMBRE COMPLETO','DEPARTAMENTO','RUT VISITA', 'NOMBRE COMPLETO VISITA' 
+                    , 'PATENTE VISITA', 
                     'Momento Ingreso', 'Momento Salida')
         elif tipo_reporte == "Residentes":
-            columns = ('rut_residente', 'dv_residente', 'nombre_residente', 'apellido_residente', 
-                    'fec_nac_residente', 'telefono_residente', 'no_depto_residente', 
-                    'patente_vehiculo')
+            columns = ('RUT RESIDENTE', 'NOMBRE COMPLETO', 
+                   'FECHA NACIMIENTO', 'TELEFONO', 'DEPARTAMENTO', 
+                   'PATENTE DEL VEHICULO')
         elif tipo_reporte == "Visitas Diarias":
-            columns = ('RUT VISITA', 'NOMBRE', 'APELLIDO', 'DEPARTAMENTO', 
+            columns = ('RUT VISITA', 'NOMBRE COMPLETO', 'DEPARTAMENTO', 
                     'PATENTE')
+
 
         # Configurar el Treeview con las nuevas columnas
         tree['columns'] = columns
         for col in columns:
             tree.heading(col, text=col)  # Establecer los encabezados
-            tree.column(col, width=70)  # Establecer un ancho fijo para cada columna
+            tree.column(col, width=70 ,anchor='center')  # Establecer un ancho fijo para cada columna
 
         # Agregar los nuevos datos al Treeview
         if datos:
             for row in datos:
                 tree.insert('', 'end', values=row)
         else:
-            messagebox.showinfo("Sin resultados", "No se encontraron datos en el rango de fechas seleccionado.")
+            messagebox.showinfo("Sin resultados", "No se encontraron datos.")
 
     # Función para filtrar los datos
     def filtrar_datos():
