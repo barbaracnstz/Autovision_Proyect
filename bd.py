@@ -301,7 +301,7 @@ def actualizar_residente(rut, telefono, no_depto):
 #         print("Error al conectar a la base de datos:", error)
 #         return None
 
-# Función para obtener los datos según el tipo de reporte
+# Función para obtener los datos según el tipo de reporte##
 def obtener_datos(tipo_reporte):
     conn = conectar()
     cursor = conn.cursor()
