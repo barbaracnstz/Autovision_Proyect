@@ -74,12 +74,24 @@ def abrir_ventana_inicio():
     password_icon = tk.Label(password_frame, text="🔒", bg='#2897cb', fg='white', font=('Arial', 14))
     password_icon.pack(side='left')
 
-    password_entry = tk.Entry(password_frame, font=('Arial', 14), show='*', width=20, bd=0,  fg='black', insertbackground='black', bg='white')
+    password_entry = tk.Entry(password_frame, font=('Arial', 14), show='*', width=20, bd=0, fg='black', insertbackground='black', bg='white')
     password_entry.pack(side='left', fill='x')
 
     # Mensaje de error debajo del campo de contraseña
     password_error = tk.Label(right_frame, text="", bg='#2897cb', fg='white', font=('Arial', 10))
     password_error.place(relx=0.5, rely=0.55, anchor='center')
+
+    # Función para validar que solo se ingresen dígitos en el campo de usuario
+    def validar_usuario_input(*args):
+        usuario = usuario_entry.get()
+        if not usuario.isdigit():
+            usuario_entry.delete(0, tk.END)
+            usuario_error.config(text="Solo se permiten números.")
+        else:
+            usuario_error.config(text="")
+
+    # Conectar la validación al campo de texto
+    usuario_entry.bind("<KeyRelease>", validar_usuario_input)
 
     # Botón de inicio de sesión
     login_button = tk.Button(right_frame, text="Iniciar Sesión", font=('Arial', 14, 'bold'), bg='#097abd', fg='white', activebackground='black', activeforeground='white', padx=10, pady=5, bd=0, command=lambda: iniciar_sesion(usuario_entry, password_entry))
