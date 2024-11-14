@@ -4,7 +4,7 @@ from tkinter import messagebox
 from menu import crear_menu
 from bd import conectar,cargar_datos, ejecutar_consulta, insertar_residente, actualizar_residente, obtener_residente_por_rut
 #, obtener_residente_por_rut, actualizar_residente, eliminar_residente
-
+from tkcalendar import DateEntry
 
 
 def abrir_ventana_residentes():
@@ -53,41 +53,177 @@ def abrir_ventana_residentes():
         # Crear formulario para ingresar los datos
         label_rut = tk.Label(modal, text="RUT Residente")
         label_rut.grid(row=0, column=0, padx=10, pady=10)
+        
         entry_rut = tk.Entry(modal)
-        entry_rut.grid(row=0, column=1, padx=10)
+        entry_rut.grid(row=0, column=1, padx=10, pady=10)
+        
+        # Etiqueta de mensaje de error debajo del campo de entrada
+        rut_error = tk.Label(modal, text="", fg="red", font=("Arial", 8))
+        rut_error.grid(row=0, column=1, padx=10, pady=(40, 0), sticky="w")  # Ajustamos aquí
 
+            # Función para validar que solo se ingresen dígitos en el campo de usuario
+        def validar_usuario_input(*args):
+            rut = entry_rut.get().replace(".", "").replace("-", "")  # Limpiar puntos y guion
+            
+            # Verificar si el RUT contiene solo dígitos
+            if not rut.isdigit():
+                rut_error.config(text="Solo se permiten números.")
+            else:
+                # Validar longitud del RUT
+                if len(rut) < 7 or len(rut) > 8:
+                    rut_error.config(text="RUT no válido.")
+                else:
+                    # Validación de RUT chileno sin el dígito verificador
+                    try:
+                        int_rut = int(rut)
+                        if int_rut < 1 or int_rut > 99999999:
+                            rut_error.config(text="RUT no válido.")
+                        else:
+                            rut_error.config(text="")  # Si todo está bien, no mostramos ningún mensaje
+                    except ValueError:
+                        rut_error.config(text="RUT no válido.")
+
+        
+         # Conectar la validación al campo de texto
+        entry_rut.bind("<KeyRelease>", validar_usuario_input)
+
+        
         label_dv = tk.Label(modal, text="DV Residente")
-        label_dv.grid(row=1, column=0, padx=10)
+        label_dv.grid(row=1, column=0, padx=10, pady=10)
         entry_dv = tk.Entry(modal)
         entry_dv.grid(row=1, column=1, padx=10)
 
+        # Etiqueta de mensaje de error debajo del campo de entrada
+        dv_error = tk.Label(modal, text="", fg="red", font=("Arial", 8))
+        dv_error.grid(row=1, column=1, padx=10, pady=(40, 0), sticky="w")  # Ajustamos aquí
+
+        def validar_dv_input(*args):
+            dv = entry_dv.get()
+            
+            # Verificar si es un solo dígito
+            if dv.isdigit() and len(dv) == 1:
+                dv_error.config(text="")  # No hay error
+            # Verificar si es solo la letra 'k' o 'K'
+            elif len(dv) == 1 and dv.lower() == 'k':
+                dv_error.config(text="")  # No hay error
+            # Verificar si hay más de un carácter ingresado
+            elif len(dv) > 1:
+                entry_dv.delete(0, tk.END)
+                dv_error.config(text="Solo un dígito o 'k'.")
+            # Si es un carácter no permitido
+            else:
+                entry_dv.delete(0, tk.END)
+                dv_error.config(text="Letra no válida.")
+
+
+        
+         # Conectar la validación al campo de texto
+        entry_dv.bind("<KeyRelease>", validar_dv_input)
+
+
         label_nombre = tk.Label(modal, text="Nombre")
-        label_nombre.grid(row=2, column=0, padx=10)
+        label_nombre.grid(row=2, column=0, padx=10, pady=10)
         entry_nombre = tk.Entry(modal)
         entry_nombre.grid(row=2, column=1, padx=10)
+        # Etiqueta de mensaje de error debajo del campo de entrada
+        caracter_error = tk.Label(modal, text="", fg="red", font=("Arial", 8))
+        caracter_error.grid(row=2, column=1, padx=10, pady=(40, 0), sticky="w")  # Ajustamos aquí
+
+        # Función para validar que solo se ingresen dígitos en el campo de usuario
+        def validar_caracteres_input(*args):
+            texto = entry_nombre.get()
+
+            # Verifica si el texto contiene números
+            if any(char.isdigit() for char in texto) and texto.strip() != "":
+                entry_nombre.delete(0, tk.END)  # Borra el texto si contiene números
+                caracter_error.config(text="Solo se permiten letras.")  # Muestra el mensaje de error
+            else:
+                caracter_error.config(text="")  # Si es válido, no muestra error
+
+        
+         # Conectar la validación al campo de texto
+        entry_nombre.bind("<KeyRelease>", validar_caracteres_input)
 
         label_apellido = tk.Label(modal, text="Apellido")
-        label_apellido.grid(row=3, column=0, padx=10)
+        label_apellido.grid(row=3, column=0, padx=10, pady=10)
         entry_apellido = tk.Entry(modal)
         entry_apellido.grid(row=3, column=1, padx=10)
+        # Etiqueta de mensaje de error debajo del campo de entrada
+        caracter2_error = tk.Label(modal, text="", fg="red", font=("Arial", 8))
+        caracter2_error.grid(row=3, column=1, padx=10, pady=(40, 0), sticky="w")  # Ajustamos aquí
 
+        # Función para validar que solo se ingresen dígitos en el campo de usuario
+        def validar2_caracteres_input(*args):
+            texto = entry_apellido.get()
+
+            # Verifica si el texto contiene números
+            if any(char.isdigit() for char in texto) and texto.strip() != "":
+                entry_apellido.delete(0, tk.END)  # Borra el texto si contiene números
+                caracter2_error.config(text="Solo se permiten letras.")  # Muestra el mensaje de error
+            else:
+                caracter2_error.config(text="")  # Si es válido, no muestra error
+
+        
+         # Conectar la validación al campo de texto
+        entry_apellido.bind("<KeyRelease>", validar2_caracteres_input)
+
+        # Label para la fecha de nacimiento
         label_fec_nac = tk.Label(modal, text="Fecha Nacimiento")
-        label_fec_nac.grid(row=4, column=0, padx=10)
-        entry_fec_nac = tk.Entry(modal)
-        entry_fec_nac.grid(row=4, column=1, padx=10)
+        label_fec_nac.grid(row=4, column=0, padx=10, pady=10)
+
+        # Selector de fecha
+        entry_fec_nac = DateEntry(modal, date_pattern='dd-mm-yyyy')  # Puedes cambiar el formato de fecha
+        entry_fec_nac.grid(row=4, column=1, padx=10, pady=10)
 
         label_telefono = tk.Label(modal, text="Teléfono")
-        label_telefono.grid(row=5, column=0, padx=10)
+        label_telefono.grid(row=5, column=0, padx=10, pady=10)
         entry_telefono = tk.Entry(modal)
         entry_telefono.grid(row=5, column=1, padx=10)
+        # Etiqueta de mensaje de error debajo del campo de entrada
+        telefono_error = tk.Label(modal, text="", fg="red", font=("Arial", 8))
+        telefono_error.grid(row=5, column=1, padx=10, pady=(40, 0), sticky="w")  # Ajustamos aquí
+
+            # Función para validar que solo se ingresen dígitos en el campo de usuario
+        def validar_telefono_input(*args):
+            texto = entry_telefono.get()
+            if not texto.isdigit():
+                entry_telefono.delete(0, tk.END)
+                telefono_error.config(text="Solo se permiten números.")
+            elif len(texto) > 8:
+                entry_telefono.delete(8, tk.END)
+                telefono_error.config(text="Máximo 8 números permitidos.")
+            else:
+                telefono_error.config(text="")
+
+        
+         # Conectar la validación al campo de texto
+        entry_telefono.bind("<KeyRelease>", validar_telefono_input)
+
+
 
         label_no_depto = tk.Label(modal, text="Nº Departamento")
-        label_no_depto.grid(row=6, column=0, padx=10)
+        label_no_depto.grid(row=6, column=0, padx=10, pady=10)
         entry_no_depto = tk.Entry(modal)
         entry_no_depto.grid(row=6, column=1, padx=10)
+        no_depto_error = tk.Label(modal, text="", fg="red", font=("Arial", 8))
+        no_depto_error.grid(row=6, column=1, padx=10, pady=(40, 0), sticky="w")  # Ajustamos aquí
+
+        def validar_no_depto_input(*args):
+            texto = entry_no_depto.get()
+            if not texto.isdigit():
+                entry_no_depto.delete(0, tk.END)
+                no_depto_error.config(text="Solo se permiten números.")
+            elif len(texto) > 4:
+                entry_no_depto.delete(4, tk.END)
+                no_depto_error.config(text="Máximo 4 números permitidos.")
+            else:
+                no_depto_error.config(text="")
+
+        # Conectar la validación al campo de texto
+        entry_no_depto.bind("<KeyRelease>", validar_no_depto_input)
 
         label_patente = tk.Label(modal, text="Patente Vehículo")
-        label_patente.grid(row=7, column=0, padx=10)
+        label_patente.grid(row=7, column=0, padx=10, pady=10)
         entry_patente = tk.Entry(modal)
         entry_patente.grid(row=7, column=1, padx=10)
 
@@ -175,6 +311,21 @@ def abrir_ventana_residentes():
         entry_telefono = tk.Entry(modal_editar)
         entry_telefono.grid(row=5, column=1, padx=10)
         entry_telefono.insert(0, residente[5])  # Asumiendo que residente[5] es el Teléfono
+        telefono_error = tk.Label(modal_editar, text="", fg="red", font=("Arial", 8))
+        telefono_error.grid(row=5, column=1, padx=10, pady=(40, 0), sticky="w")  # Ajustamos aquí
+        def validar_telefono_input(*args):
+            texto = entry_telefono.get()
+            if not texto.isdigit():
+                entry_telefono.delete(0, tk.END)
+                telefono_error.config(text="Solo se permiten números.")
+            elif len(texto) > 8:
+                entry_telefono.delete(8, tk.END)
+                telefono_error.config(text="Máximo 8 números permitidos.")
+            else:
+                telefono_error.config(text="")
+        entry_telefono.bind("<KeyRelease>", validar_telefono_input)
+
+
 
         # Campo editable para el Nº Departamento
         label_no_depto = tk.Label(modal_editar, text="Nº Departamento")
@@ -182,6 +333,22 @@ def abrir_ventana_residentes():
         entry_no_depto = tk.Entry(modal_editar)
         entry_no_depto.grid(row=6, column=1, padx=10)
         entry_no_depto.insert(0, residente[6])  # Asumiendo que residente[6] es el Nº Departamento
+        no_depto_error = tk.Label(modal_editar, text="", fg="red", font=("Arial", 8))
+        no_depto_error.grid(row=6, column=1, padx=10, pady=(40, 0), sticky="w")  # Ajustamos aquí
+
+        def validar_no_depto_input(*args):
+            texto = entry_no_depto.get()
+            if not texto.isdigit():
+                entry_no_depto.delete(0, tk.END)
+                no_depto_error.config(text="Solo se permiten números.")
+            elif len(texto) > 4:
+                entry_no_depto.delete(4, tk.END)
+                no_depto_error.config(text="Máximo 4 números permitidos.")
+            else:
+                no_depto_error.config(text="")
+
+        # Conectar la validación al campo de texto
+        entry_no_depto.bind("<KeyRelease>", validar_no_depto_input)
 
         # Función para guardar los cambios
         def guardar_cambios_residente():
