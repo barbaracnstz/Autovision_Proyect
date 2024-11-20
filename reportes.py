@@ -6,7 +6,7 @@ from PIL import Image, ImageTk
 from bd import obtener_datos,obtener_datos_entre_fechas, conectar  # Importar la conexión desde bd.py
 from datetime import datetime
 from menu import crear_menu
-
+import customtkinter as ctk
 
 # Función para abrir la ventana de reportes
 def abrir_ventana_reportes():
@@ -131,7 +131,17 @@ def abrir_ventana_reportes():
     fecha_hasta_entry.pack(pady=5)
 
     # Botón para filtrar los datos
-    boton_filtrar = tk.Button(root, text="Filtrar", command=filtrar_datos)
+    boton_filtrar = ctk.CTkButton(
+        root,fg_color="white",
+        text="Filtrar",
+        command=filtrar_datos,
+        border_color="black",  # Borde negro
+        border_width=2,        # Ancho del borde
+        text_color="black",    # Color de la letra en negro
+        hover_color="gray",    # Color cuando se pasa el ratón por encima
+        width=100,             # Ancho del botón
+        height=25              # Alto del botón
+    )
     boton_filtrar.pack(pady=5)
 
 
@@ -141,7 +151,19 @@ def abrir_ventana_reportes():
     tree.pack(fill='x', padx=50, pady=50)  # Ajustar para que no ocupe todo el ancho
 
     # Botón para generar el reporte en Excel
-    boton_generar_excel = tk.Button(root, text="Generar Reporte", command=generar_reporte_excel)
+    boton_generar_excel = ctk.CTkButton(
+        root, 
+        text="Generar Reporte", 
+        command=generar_reporte_excel, 
+        fg_color="#28a745",  # Color verde de fondo (usando código hex)
+        hover_color="#218838",  # Color verde más oscuro cuando pasa el mouse (efecto hover)
+        width=200,  # Ancho del botón
+        height=40,  # Altura del botón
+        font=("Arial", 16, "bold"),  # Fuente del texto
+        corner_radius=10  # Bordes redondeados
+    )
+
+    # Empacar el botón en la ventana
     boton_generar_excel.pack(pady=5)
     # Llamada inicial para cargar los datos
     actualizar_treeview("Multados")
