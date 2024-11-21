@@ -5,11 +5,23 @@ from menu import crear_menu
 from bd import conectar,cargar_datos, ejecutar_consulta, insertar_residente, actualizar_residente, obtener_residente_por_rut
 #, obtener_residente_por_rut, actualizar_residente, eliminar_residente
 from tkcalendar import DateEntry
-
+import customtkinter as ctk
+from PIL import Image, ImageTk
 
 def abrir_ventana_residentes():
     ventana_residentes = tk.Toplevel()
     ventana_residentes.title("Residentes - Administrador")
+
+    # Cargar la imagen de fondo
+    fondo_img = Image.open("Fondo2.png")
+    fondo_img = fondo_img.resize((1570, 800), Image.LANCZOS)  # Cambiar a LANCZOS
+    fondo_photo = ImageTk.PhotoImage(fondo_img)
+
+    # Crear un label para la imagen de fondo
+    label_fondo = tk.Label(ventana_residentes, image=fondo_photo)
+    label_fondo.place(relwidth=1, relheight=1)  # Ajustar a todo el fondo
+    # Mantener la referencia a la imagen
+    label_fondo.image = fondo_photo  # Necesario para que la imagen no se elimine
 
     # Obtener el tamaño de la pantalla y ajustar la ventana
     ancho_ventana = ventana_residentes.winfo_screenwidth()
@@ -36,9 +48,18 @@ def abrir_ventana_residentes():
     label_titulo.grid(row=0, column=0, columnspan=2, pady=10)
 
     # Crear barra de búsqueda
-    tk.Label(frame_controles, text="Buscar:").grid(row=1, column=0, padx=10)
-    entry_buscar = tk.Entry(frame_controles, width=30)
-    entry_buscar.grid(row=1, column=1, padx=10)
+    # tk.Label(frame_controles, text="Buscar:").grid(row=1, column=0, padx=10)
+    # entry_buscar = tk.Entry(frame_controles, width=30)
+    # entry_buscar.grid(row=1, column=1, padx=10)
+    # Etiqueta de búsqueda con diseño moderno
+    
+    label_buscar = ctk.CTkLabel(frame_controles, text="Buscar:", font=("Arial", 12))
+    label_buscar.grid(row=1, column=0, padx=10, pady=10, sticky="w")
+
+    # Campo de entrada de búsqueda
+    entry_buscar = ctk.CTkEntry(frame_controles, width=250, placeholder_text="Ingrese texto para buscar", font=("Arial", 12))
+    entry_buscar.grid(row=1, column=1, padx=10, pady=10, sticky="w")
+
 
     # Variables para manejar la paginación y búsqueda
     registros_por_pagina = 10
@@ -48,20 +69,32 @@ def abrir_ventana_residentes():
     # Función para abrir el modal de agregar residente
     def abrir_modal_agregar_residente():
         modal = tk.Toplevel()
-        modal.title("Agregar Residente")
+        # Cargar la imagen de fondo
+        fondo_img = Image.open("fondoform.png")
+        fondo_img = fondo_img.resize((1570, 1000), Image.LANCZOS)  # Cambiar a LANCZOS
+        fondo_photo = ImageTk.PhotoImage(fondo_img)
 
+        # Crear un label para la imagen de fondo
+        label_fondo = tk.Label(modal, image=fondo_photo)
+        label_fondo.place(relwidth=1, relheight=1)  # Ajustar a todo el fondo
+        # Mantener la referencia a la imagen
+        label_fondo.image = fondo_photo  # Necesario para que la imagen no se elimine
+        modal.title("Agregar Residente")
+         # Título visible dentro de la ventana
+        title_label = tk.Label(modal, text="Agregar Residente", font=("Arial", 16, "bold"), bg="#2e86c1", fg="white")
+        title_label.grid(row=0, column=0, columnspan=2, padx=10, pady=20, sticky="nsew")
         # Crear formulario para ingresar los datos
-        label_rut = tk.Label(modal, text="RUT Residente")
-        label_rut.grid(row=0, column=0, padx=10, pady=10)
+        label_rut = tk.Label(modal, text="RUT Residente",fg="white",bg="#0f3b58")
+        label_rut.grid(row=1, column=0, padx=10, pady=10, sticky="w")
         
         entry_rut = tk.Entry(modal)
-        entry_rut.grid(row=0, column=1, padx=10, pady=10)
+        entry_rut.grid(row=1, column=1, padx=10, pady=10)
         
         # Etiqueta de mensaje de error debajo del campo de entrada
         rut_error = tk.Label(modal, text="", fg="red", font=("Arial", 8))
-        rut_error.grid(row=0, column=1, padx=10, pady=(40, 0), sticky="w")  # Ajustamos aquí
+        rut_error.grid(row=1, column=1, padx=10, pady=(40, 0), sticky="w")  # Ajustamos aquí
 
-            # Función para validar que solo se ingresen dígitos en el campo de usuario
+            # Función para validar que solo se ingresen dígitos en el campo de rut
         def validar_usuario_input(*args):
             rut = entry_rut.get().replace(".", "").replace("-", "")  # Limpiar puntos y guion
             
@@ -88,14 +121,14 @@ def abrir_ventana_residentes():
         entry_rut.bind("<KeyRelease>", validar_usuario_input)
 
         
-        label_dv = tk.Label(modal, text="DV Residente")
-        label_dv.grid(row=1, column=0, padx=10, pady=10)
+        label_dv = tk.Label(modal, text="DV Residente",fg="white",bg="#0f3b58")
+        label_dv.grid(row=2, column=0, padx=10, pady=10, sticky="w")
         entry_dv = tk.Entry(modal)
-        entry_dv.grid(row=1, column=1, padx=10)
+        entry_dv.grid(row=2, column=1, padx=10)
 
         # Etiqueta de mensaje de error debajo del campo de entrada
         dv_error = tk.Label(modal, text="", fg="red", font=("Arial", 8))
-        dv_error.grid(row=1, column=1, padx=10, pady=(40, 0), sticky="w")  # Ajustamos aquí
+        dv_error.grid(row=2, column=1, padx=10, pady=(40, 0), sticky="w")  # Ajustamos aquí
 
         def validar_dv_input(*args):
             dv = entry_dv.get()
@@ -121,13 +154,13 @@ def abrir_ventana_residentes():
         entry_dv.bind("<KeyRelease>", validar_dv_input)
 
 
-        label_nombre = tk.Label(modal, text="Nombre")
-        label_nombre.grid(row=2, column=0, padx=10, pady=10)
+        label_nombre = tk.Label(modal, text="Nombre",fg="white", bg="#1a1919")
+        label_nombre.grid(row=3, column=0, padx=10, pady=10, sticky="w")
         entry_nombre = tk.Entry(modal)
-        entry_nombre.grid(row=2, column=1, padx=10)
+        entry_nombre.grid(row=3, column=1, padx=10)
         # Etiqueta de mensaje de error debajo del campo de entrada
         caracter_error = tk.Label(modal, text="", fg="red", font=("Arial", 8))
-        caracter_error.grid(row=2, column=1, padx=10, pady=(40, 0), sticky="w")  # Ajustamos aquí
+        caracter_error.grid(row=3, column=1, padx=10, pady=(40, 0), sticky="w")  # Ajustamos aquí
 
         # Función para validar que solo se ingresen dígitos en el campo de usuario
         def validar_caracteres_input(*args):
@@ -144,13 +177,13 @@ def abrir_ventana_residentes():
          # Conectar la validación al campo de texto
         entry_nombre.bind("<KeyRelease>", validar_caracteres_input)
 
-        label_apellido = tk.Label(modal, text="Apellido")
-        label_apellido.grid(row=3, column=0, padx=10, pady=10)
+        label_apellido = tk.Label(modal, text="Apellido",fg="white", bg="#1a1919")
+        label_apellido.grid(row=4, column=0, padx=10, pady=10, sticky="w")
         entry_apellido = tk.Entry(modal)
-        entry_apellido.grid(row=3, column=1, padx=10)
+        entry_apellido.grid(row=4, column=1, padx=10)
         # Etiqueta de mensaje de error debajo del campo de entrada
         caracter2_error = tk.Label(modal, text="", fg="red", font=("Arial", 8))
-        caracter2_error.grid(row=3, column=1, padx=10, pady=(40, 0), sticky="w")  # Ajustamos aquí
+        caracter2_error.grid(row=4, column=1, padx=10, pady=(40, 0), sticky="w")  # Ajustamos aquí
 
         # Función para validar que solo se ingresen dígitos en el campo de usuario
         def validar2_caracteres_input(*args):
@@ -168,20 +201,20 @@ def abrir_ventana_residentes():
         entry_apellido.bind("<KeyRelease>", validar2_caracteres_input)
 
         # Label para la fecha de nacimiento
-        label_fec_nac = tk.Label(modal, text="Fecha Nacimiento")
-        label_fec_nac.grid(row=4, column=0, padx=10, pady=10)
+        label_fec_nac = tk.Label(modal, text="Fecha Nacimiento",fg="white", bg="#1a1919")
+        label_fec_nac.grid(row=5, column=0, padx=10, pady=10, sticky="w")
 
         # Selector de fecha
         entry_fec_nac = DateEntry(modal, date_pattern='dd-mm-yyyy')  # Puedes cambiar el formato de fecha
-        entry_fec_nac.grid(row=4, column=1, padx=10, pady=10)
+        entry_fec_nac.grid(row=5, column=1, padx=10, pady=10)
 
-        label_telefono = tk.Label(modal, text="Teléfono")
-        label_telefono.grid(row=5, column=0, padx=10, pady=10)
+        label_telefono = tk.Label(modal, text="Teléfono",fg="white", bg="#1a1919")
+        label_telefono.grid(row=6, column=0, padx=10, pady=10, sticky="w")
         entry_telefono = tk.Entry(modal)
-        entry_telefono.grid(row=5, column=1, padx=10)
+        entry_telefono.grid(row=6, column=1, padx=10)
         # Etiqueta de mensaje de error debajo del campo de entrada
         telefono_error = tk.Label(modal, text="", fg="red", font=("Arial", 8))
-        telefono_error.grid(row=5, column=1, padx=10, pady=(40, 0), sticky="w")  # Ajustamos aquí
+        telefono_error.grid(row=6, column=1, padx=10, pady=(40, 0), sticky="w")  # Ajustamos aquí
 
             # Función para validar que solo se ingresen dígitos en el campo de usuario
         def validar_telefono_input(*args):
@@ -201,12 +234,12 @@ def abrir_ventana_residentes():
 
 
 
-        label_no_depto = tk.Label(modal, text="Nº Departamento")
-        label_no_depto.grid(row=6, column=0, padx=10, pady=10)
+        label_no_depto = tk.Label(modal, text="Nº Departamento",fg="white", bg="#1a1919")
+        label_no_depto.grid(row=7, column=0, padx=10, pady=10, sticky="w")
         entry_no_depto = tk.Entry(modal)
-        entry_no_depto.grid(row=6, column=1, padx=10)
+        entry_no_depto.grid(row=7, column=1, padx=10)
         no_depto_error = tk.Label(modal, text="", fg="red", font=("Arial", 8))
-        no_depto_error.grid(row=6, column=1, padx=10, pady=(40, 0), sticky="w")  # Ajustamos aquí
+        no_depto_error.grid(row=7, column=1, padx=10, pady=(40, 0), sticky="w")  # Ajustamos aquí
 
         def validar_no_depto_input(*args):
             texto = entry_no_depto.get()
@@ -222,10 +255,10 @@ def abrir_ventana_residentes():
         # Conectar la validación al campo de texto
         entry_no_depto.bind("<KeyRelease>", validar_no_depto_input)
 
-        label_patente = tk.Label(modal, text="Patente Vehículo")
-        label_patente.grid(row=7, column=0, padx=10, pady=10)
+        label_patente = tk.Label(modal, text="Patente Vehículo",fg="white", bg="#1a1919")
+        label_patente.grid(row=8, column=0, padx=10, pady=10, sticky="w")
         entry_patente = tk.Entry(modal)
-        entry_patente.grid(row=7, column=1, padx=10)
+        entry_patente.grid(row=8, column=1, padx=10)
 
         def guardar_residente():
             # Obtener los datos ingresados en el formulario
@@ -255,9 +288,10 @@ def abrir_ventana_residentes():
 
 
         # Botón para guardar
-        btn_guardar = tk.Button(modal, text="Guardar", command=guardar_residente)
-        btn_guardar.grid(row=8, column=0, columnspan=2, pady=10)
-        
+        # btn_guardar = tk.Button(modal, text="Guardar", command=guardar_residente)
+        # btn_guardar.grid(row=9, column=0, columnspan=2, pady=10)
+        btn_guardar = tk.Button(modal, text="Guardar", command=guardar_residente, bg="#007BFF", fg="white", font=("Arial", 12, "bold"))
+        btn_guardar.grid(row=9, column=0, columnspan=2, pady=10)
     def editar_registro(rut):
         # Obtener datos del residente usando el RUT
         residente = obtener_residente_por_rut(rut)  # Asegúrate de que esta función esté implementada en bd.py
@@ -377,8 +411,20 @@ def abrir_ventana_residentes():
 
 
     # Crear botón "Agregar residente"
-    btn_agregar_residente = tk.Button(ventana_residentes, text="Agregar Residente", command=abrir_modal_agregar_residente)
+    # btn_agregar_residente = tk.Button(ventana_residentes, text="Agregar Residente", command=abrir_modal_agregar_residente)
+    # btn_agregar_residente.pack(pady=20)
+    # Botón "Agregar Residente"
+    btn_agregar_residente = ctk.CTkButton(
+        ventana_residentes,
+        text="Agregar Residente",
+        command=abrir_modal_agregar_residente,
+        fg_color="#2ecc71",  # Color de fondo verde
+        hover_color="lightgreen",  # Color cuando el mouse pasa por encima (verde más claro)
+        text_color="white",  # Color de las letras blancas
+        font=("Arial", 14, "bold")  # Mismo tamaño y fuente que los anteriores (Arial, 14, negrita)
+    )
     btn_agregar_residente.pack(pady=20)
+
 
     # Función para actualizar el texto de búsqueda y recargar la tabla
     def actualizar_busqueda(event=None):
@@ -397,7 +443,7 @@ def abrir_ventana_residentes():
 
         # Encabezados de la tabla
         for i, encabezado in enumerate(encabezados):
-            label = tk.Label(frame_tabla, text=encabezado, font=('Arial', 10, 'bold'), borderwidth=1, relief="solid", width=15)
+            label = tk.Label(frame_tabla, text=encabezado, font=('Arial', 10, 'bold'), bg="#3498db",borderwidth=1, relief="solid", width=15)
             label.grid(row=0, column=i, sticky="nsew")
 
         # Obtener los datos de la base de datos
@@ -416,7 +462,7 @@ def abrir_ventana_residentes():
         for row_num, registro in enumerate(registros_pagina, start=1):
             # RUT, NOMBRE, TELEFONO, NRO DEPTO, PATENTE
             for col_num, dato in enumerate(registro):
-                label = tk.Label(frame_tabla, text=dato, borderwidth=1, relief="solid", width=15)
+                label = tk.Label(frame_tabla, text=dato, borderwidth=1, bg="white",relief="solid", width=15)
                 label.grid(row=row_num, column=col_num, sticky="nsew")
 
             # Botón EDITAR
@@ -456,12 +502,37 @@ def abrir_ventana_residentes():
     frame_paginacion = tk.Frame(ventana_residentes)
     frame_paginacion.pack(pady=20)
 
-    btn_anterior = tk.Button(frame_paginacion, text="Anterior", command=lambda: cambiar_pagina(-1))
-    btn_anterior.grid(row=0, column=0)
+    # btn_anterior = tk.Button(frame_paginacion, text="Anterior", command=lambda: cambiar_pagina(-1))
+    # btn_anterior.grid(row=0, column=0)
 
-    btn_siguiente = tk.Button(frame_paginacion, text="Siguiente", command=lambda: cambiar_pagina(1))
-    btn_siguiente.grid(row=0, column=1)
+    # btn_siguiente = tk.Button(frame_paginacion, text="Siguiente", command=lambda: cambiar_pagina(1))
+    # btn_siguiente.grid(row=0, column=1)
+    # Botón "Anterior"
+    btn_anterior = ctk.CTkButton(
+        frame_paginacion,
+        text="Anterior",
+        command=lambda: cambiar_pagina(-1),
+        fg_color="blue",  # Color de fondo del botón
+        hover_color="lightblue",  # Color cuando se pasa el mouse por encima
+        text_color="white",  # Color del texto (letras blancas)
+        font=("Arial", 14, "bold")  # Fuente del texto, puedes cambiarla
+    )
+    btn_anterior.grid(row=0, column=0, padx=10, pady=5)
 
+    
+
+    # Botón "Siguiente"
+    btn_siguiente = ctk.CTkButton(
+        frame_paginacion,
+        text="Siguiente",
+        command=lambda: cambiar_pagina(1),
+        fg_color="blue",  # Color de fondo del botón
+        hover_color="lightblue",  # Color cuando se pasa el mouse por encima
+        text_color="white",  # Color del texto (letras blancas)
+        font=("Arial", 14, "bold")  # Fuente del texto
+    )
+    btn_siguiente.grid(row=0, column=1, padx=10, pady=5)
+    
     # Función para cambiar de página
     def cambiar_pagina(direccion):
         nonlocal pagina_actual

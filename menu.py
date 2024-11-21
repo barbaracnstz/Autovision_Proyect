@@ -4,7 +4,7 @@ from tkinter import font
 
 def crear_menu(ventana):
     # Crear un Frame en la parte superior para el menú
-    menu_frame = tk.Frame(ventana, bg="#4db6ac")
+    menu_frame = tk.Frame(ventana, bg="#212f3d")
     menu_frame.pack(fill=tk.X)  # Sin pady
 
     # Crear estilo de fuente para los botones
@@ -33,17 +33,17 @@ def crear_menu(ventana):
 
     # Crear los botones del menú con estilo
     btn_inicio = tk.Button(menu_frame, text="🏠 Inicio", command=go_to_inicio, font=button_font,
-                           bg="#4db6ac", fg="white", bd=0, activebackground="white", activeforeground="black", padx=15)
+                           bg="#212f3d", fg="white", bd=0, activebackground="white", activeforeground="black", padx=15)
     btn_inicio.pack(side=tk.LEFT, padx=10)
 
     btn_residentes = tk.Button(menu_frame, text="👥 Residentes", command=go_to_residentes, font=button_font,
-                               bg="#4db6ac", fg="white", bd=0, activebackground="white", activeforeground="black", padx=15)
+                               bg="#212f3d", fg="white", bd=0, activebackground="white", activeforeground="black", padx=15)
     btn_residentes.pack(side=tk.LEFT, padx=10)
 
     btn_reportes = tk.Button(menu_frame, text="📊 Reportes", command=go_to_reportes, font=button_font,
-                             bg="#4db6ac", fg="white", bd=0, activebackground="white", activeforeground="black", padx=15)
+                             bg="#212f3d", fg="white", bd=0, activebackground="white", activeforeground="black", padx=15)
     btn_reportes.pack(side=tk.LEFT, padx=10)
     
     btn_cerrar_sesion = tk.Button(menu_frame, text="Cerrar Sesión", command=cerrar_sesion, font=button_font,
-                              bg="#4db6ac", fg="white", bd=0, activebackground="white", activeforeground="black", padx=15)
+                              bg="#212f3d", fg="white", bd=0, activebackground="white", activeforeground="black", padx=15)
     btn_cerrar_sesion.pack(side=tk.RIGHT, padx=10)
