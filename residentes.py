@@ -2,11 +2,12 @@ import tkinter as tk
 from tkinter import messagebox
 # from bd import conectar, cargar_datos, insertar_residente, editar_residente
 from menu import crear_menu
-from bd import conectar,cargar_datos, ejecutar_consulta, insertar_residente, actualizar_residente, obtener_residente_por_rut
+from bd import conectar,cargar_datos, ejecutar_consulta, insertar_residente, actualizar_residente, obtener_residente_por_rut,eliminar_registro
 #, obtener_residente_por_rut, actualizar_residente, eliminar_residente
 from tkcalendar import DateEntry
 import customtkinter as ctk
 from PIL import Image, ImageTk
+from datetime import datetime
 
 def abrir_ventana_residentes():
     ventana_residentes = tk.Toplevel()
@@ -332,40 +333,67 @@ def abrir_ventana_residentes():
         label_rut = ctk.CTkLabel(modal_editar, text="RUT Residente", font=("Arial", 12), anchor="w")
         label_rut.grid(row=1, column=0, padx=10, pady=10, sticky="w")
 
-        entry_rut = ctk.CTkEntry(modal_editar, state="readonly", font=("Arial", 12),fg_color="#f0f0f0")
+        entry_rut = ctk.CTkEntry(modal_editar, font=("Arial", 12),fg_color="#f0f0f0")
         entry_rut.grid(row=1, column=1, padx=10, pady=10)
+        entry_rut.insert(0, residente[0])  # Asumiendo que residente[0] es el DV
+        entry_rut.configure(state="readonly")
 
         # Mostrar el DV (solo lectura)
         label_dv = ctk.CTkLabel(modal_editar, text="DV Residente", font=("Arial", 12), anchor="w")
         label_dv.grid(row=2, column=0, padx=10, pady=10, sticky="w")
 
-        entry_dv = ctk.CTkEntry(modal_editar, state="readonly", font=("Arial", 12),fg_color="#f0f0f0")
+        entry_dv = ctk.CTkEntry(modal_editar, font=("Arial", 12),fg_color="#f0f0f0")
         entry_dv.grid(row=2, column=1, padx=10, pady=10)
         entry_dv.insert(0, residente[1])  # Asumiendo que residente[1] es el DV
-
+        entry_dv.configure(state="readonly")
         # Mostrar el Nombre (solo lectura)
         label_nombre = ctk.CTkLabel(modal_editar, text="Nombre", font=("Arial", 12), anchor="w")
         label_nombre.grid(row=3, column=0, padx=10, pady=10, sticky="w")
 
-        entry_nombre = ctk.CTkEntry(modal_editar, state="readonly", font=("Arial", 12),fg_color="#f0f0f0")
+        entry_nombre = ctk.CTkEntry(modal_editar, font=("Arial", 12),fg_color="#f0f0f0")
         entry_nombre.grid(row=3, column=1, padx=10, pady=10)
-
+        entry_nombre.insert(0, residente[2])  # Asumiendo que residente[3] es el Apellido
+        entry_nombre.configure(state="readonly")
         # Mostrar el Apellido (solo lectura)
         label_apellido = ctk.CTkLabel(modal_editar, text="Apellido", font=("Arial", 12), anchor="w")
         label_apellido.grid(row=4, column=0, padx=10, pady=10, sticky="w")
 
-        entry_apellido = ctk.CTkEntry(modal_editar, state="readonly", font=("Arial", 12),fg_color="#f0f0f0")
+        entry_apellido = ctk.CTkEntry(modal_editar, font=("Arial", 12),fg_color="#f0f0f0")
         entry_apellido.grid(row=4, column=1, padx=10, pady=10)
         entry_apellido.insert(0, residente[3])  # Asumiendo que residente[3] es el Apellido
+        entry_apellido.configure(state="readonly")
 
-        # Mostrar la Fecha de Nacimiento (solo lectura)
+                # Mostrar la Fecha de Nacimiento (solo lectura)
         label_fec_nac = ctk.CTkLabel(modal_editar, text="Fecha Nacimiento", font=("Arial", 12), anchor="w")
         label_fec_nac.grid(row=5, column=0, padx=10, pady=10, sticky="w")
 
-        entry_fec_nac = ctk.CTkEntry(modal_editar, state="readonly", font=("Arial", 12),fg_color="#f0f0f0")
+        # Crear el campo de entrada
+        entry_fec_nac = ctk.CTkEntry(modal_editar, font=("Arial", 12), fg_color="#f0f0f0")
         entry_fec_nac.grid(row=5, column=1, padx=10, pady=10)
-        entry_fec_nac.insert(0, residente[5])  # Asumiendo que residente[4] es la Fecha de Nacimiento
 
+        # Obtener la fecha (asumimos que residente[4] es un objeto datetime o string con formato "YYYY-MM-DD")
+        fec_nac = residente[4]  # Por ejemplo, residente[4] es "1990-05-15"
+
+        # Si la fecha es un string, conviértela a un objeto datetime para asegurarte de que tenga el formato correcto
+        if isinstance(fec_nac, str):
+            fec_nac = datetime.strptime(fec_nac, "%Y-%m-%d")  # Convierte de "YYYY-MM-DD" a objeto datetime
+
+        # Formatear la fecha como "DD-MM-YY"
+        fec_nac_formateada = fec_nac.strftime("%d-%m-%y")  # El formato es DD-MM-YY
+
+        # Insertar la fecha en el campo de entrada
+        entry_fec_nac.insert(0, fec_nac_formateada)
+
+        # Hacer el campo de solo lectura
+        entry_fec_nac.configure(state="readonly")
+        # # Mostrar la Fecha de Nacimiento (solo lectura)
+        # label_fec_nac = ctk.CTkLabel(modal_editar, text="Fecha Nacimiento", font=("Arial", 12), anchor="w")
+        # label_fec_nac.grid(row=5, column=0, padx=10, pady=10, sticky="w")
+
+        # entry_fec_nac = ctk.CTkEntry(modal_editar, font=("Arial", 12),fg_color="#f0f0f0")
+        # entry_fec_nac.grid(row=5, column=1, padx=10, pady=10)
+        # entry_fec_nac.insert(0, residente[4])  # Asumiendo que residente[4] es la Fecha de Nacimiento
+        # entry_fec_nac.configure(state="readonly")
         # Campo editable para el Teléfono
         label_telefono = ctk.CTkLabel(modal_editar, text="Teléfono", font=("Arial", 12), anchor="w")
         label_telefono.grid(row=6, column=0, padx=10, pady=10, sticky="w")
