@@ -234,7 +234,21 @@ def completar_rut_residente():
     except psycopg2.DatabaseError as e:
         print("Error al consultar residente:", e)
         conexion_db.rollback()
-
+def preprocesar_imagen(imagen):
+    """Aplica binarización, suavizado y escalado a la imagen para mejorar la detección OCR."""
+    # Convertir la imagen a escala de grises
+    gris = cv2.cvtColor(imagen, cv2.COLOR_BGR2GRAY)
+    
+    # Binarización de la imagen utilizando el método de umbralización de Otsu
+    _, binarizada = cv2.threshold(gris, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    
+    # Suavizado para reducir el ruido (usamos el filtro GaussianBlur)
+    suavizada = cv2.GaussianBlur(binarizada, (5, 5), 0)
+    
+    # Escalado de la imagen para mejorar la precisión de OCR (duplicamos el tamaño)
+    escalada = cv2.resize(suavizada, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
+    
+    return escalada
 def mostrar_video():
     global n_frame, resultados, cap
 
@@ -256,8 +270,8 @@ def mostrar_video():
             deteccion_encontrada = True
             cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), (0, 0, 255), 2)
             recorte_patente = frame[int(y1):int(y2), int(x1):int(x2), :]
-            recorte_patente_gris = cv2.cvtColor(recorte_patente, cv2.COLOR_BGR2GRAY)
-            texto_patente = pytesseract.image_to_string(recorte_patente_gris, config='--psm 8').strip()
+            recorte_patente_preprocesada = preprocesar_imagen(recorte_patente)
+            texto_patente = pytesseract.image_to_string(recorte_patente_preprocesada, config='--psm 8 --oem 3').strip()
             texto_patente = ''.join(filter(str.isalnum, texto_patente))
             texto_patente = validar_formato_patente(texto_patente)
 
