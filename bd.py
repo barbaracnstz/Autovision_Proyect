@@ -10,7 +10,6 @@ def conectar():
             database="autovision",
             user="postgres",
             password="holanda123."
-        )
         return conexion_db
     except Exception as e:
         print(f"Error al conectar con la base de datos: {e}")
@@ -285,40 +284,53 @@ def actualizar_residente(rut, telefono, no_depto):
     finally:
         cursor.close()
         conexion.close()
-def eliminar_registro(rut):
-    conexion = conectar()
-    if conexion:
-        try:
-            cursor = conexion.cursor()
+        
+def eliminar_residente(rut):
+    """
+    Elimina un residente de la base de datos junto con sus visitas y vehículo asociado.
+    """
+    conexion = conectar()  # Asegúrate de tener la conexión configurada correctamente
+    cursor = conexion.cursor()
 
-            # Eliminar el vehículo asociado al residente (si existe)
-            query_vehiculo = """
-            DELETE FROM vehiculo
-            WHERE residente_rut_residente = %s;
-            """
-            cursor.execute(query_vehiculo, ((rut),))
+    try:
+        # Eliminar las visitas asociadas al residente
+        consulta_visitas = """
+        DELETE FROM visita
+        WHERE residente_rut_residente = %s;
+        """
+        cursor.execute(consulta_visitas, (rut,))
 
-            # Eliminar el residente de la tabla residente
-            query_residente = """
-            DELETE FROM residente
-            WHERE rut_residente = %s;
-            """
-            cursor.execute(query_residente, ((rut),))
+        # Eliminar el vehículo asociado al residente
+        consulta_vehiculo = """
+        DELETE FROM vehiculo
+        WHERE residente_rut_residente = %s;
+        """
+        cursor.execute(consulta_vehiculo, (rut,))
 
-            # Confirmar cambios
-            conexion.commit()
+        # Eliminar al residente
+        consulta_residente = """
+        DELETE FROM residente
+        WHERE rut_residente = %s;
+        """
+        cursor.execute(consulta_residente, (rut,))
 
-            # Cerrar cursor
-            cursor.close()
+        # Confirmar cambios
+        conexion.commit()
+        print(f"Residente con RUT {rut} y sus datos asociados fueron eliminados correctamente.")
+        return True
 
-            # Mostrar mensaje de éxito
-            messagebox.showinfo("Éxito", "El registro del residente ha sido eliminado correctamente.")
+    except Exception as e:
+        # Deshacer cambios en caso de error
+        conexion.rollback()
+        print(f"Error al eliminar residente: {e}")
+        return False
 
-        except Exception as e:
-            print(f"Error al eliminar residente: {e}")
-            messagebox.showerror("Error", "Hubo un problema al eliminar el registro del residente.")
-        finally:
-            conexion.close()
+    finally:
+        cursor.close()
+        conexion.close()
+
+
+
 
 ###############################################REPORTES
 # Función para establecer la conexión a la base de datos
