@@ -13,6 +13,7 @@ import inicio_sesion  # Importa el archivo de inicio de sesión
 from tkinter import ttk
 import tkinter.messagebox as messagebox
 from datetime import datetime, timedelta, timezone
+import customtkinter as ctk
 
 
 # Ruta de Tesseract en tu sistema (ajustar según corresponda)
@@ -23,7 +24,7 @@ conexion_db = psycopg2.connect(
     host="localhost",
     database="autovision",
     user="postgres",
-    password="holanda123."
+    password="root"
 )
 cursor_db = conexion_db.cursor()
 
@@ -176,6 +177,7 @@ def mostrar_formulario_visita():
     boton_registrar_visita.place_forget()
 
     # Mostrar el botón "Volver" para cerrar el formulario de visita
+    #este codigo le da la ubicacion al boton volver no tocar 
     boton_volver.place(relx=0.5, rely=0.82)
 
     # Limpiar los campos del formulario para registrar una nueva visita
@@ -238,7 +240,21 @@ def completar_rut_residente():
     except psycopg2.DatabaseError as e:
         print("Error al consultar residente:", e)
         conexion_db.rollback()
-
+def preprocesar_imagen(imagen):
+    """Aplica binarización, suavizado y escalado a la imagen para mejorar la detección OCR."""
+    # Convertir la imagen a escala de grises
+    gris = cv2.cvtColor(imagen, cv2.COLOR_BGR2GRAY)
+    
+    # Binarización de la imagen utilizando el método de umbralización de Otsu
+    _, binarizada = cv2.threshold(gris, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    
+    # Suavizado para reducir el ruido (usamos el filtro GaussianBlur)
+    suavizada = cv2.GaussianBlur(binarizada, (5, 5), 0)
+    
+    # Escalado de la imagen para mejorar la precisión de OCR (duplicamos el tamaño)
+    escalada = cv2.resize(suavizada, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
+    
+    return escalada
 def mostrar_video():
     global n_frame, resultados, cap
 
@@ -260,8 +276,8 @@ def mostrar_video():
             deteccion_encontrada = True
             cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), (0, 0, 255), 2)
             recorte_patente = frame[int(y1):int(y2), int(x1):int(x2), :]
-            recorte_patente_gris = cv2.cvtColor(recorte_patente, cv2.COLOR_BGR2GRAY)
-            texto_patente = pytesseract.image_to_string(recorte_patente_gris, config='--psm 8').strip()
+            recorte_patente_preprocesada = preprocesar_imagen(recorte_patente)
+            texto_patente = pytesseract.image_to_string(recorte_patente_preprocesada, config='--psm 8 --oem 3').strip()
             texto_patente = ''.join(filter(str.isalnum, texto_patente))
             texto_patente = validar_formato_patente(texto_patente)
 
@@ -638,50 +654,50 @@ etiqueta_rut = tk.Label(frame_datos, text="", font=("Arial", 14), bg="white", fg
 etiqueta_rut.pack(pady=5, anchor="w", padx=10)
 
 # Crear el frame para el formulario de visita (oculto inicialmente)
-frame_formulario_visita = tk.Frame(ventana, bg="gray83", relief="solid", bd=2)
+# frame_formulario_visita = tk.Frame(ventana, bg="gray83", relief="solid", bd=2)
 
-etiqueta_formulario_patente = tk.Label(frame_formulario_visita, text="Patente Visita: ", font=("Arial", 14), bg="gray83", fg="#4B0082")
-etiqueta_formulario_patente.pack(pady=5, anchor="w", padx=10)
+# etiqueta_formulario_patente = tk.Label(frame_formulario_visita, text="Patente Visita: ", font=("Arial", 14), bg="gray83", fg="#4B0082")
+# etiqueta_formulario_patente.pack(pady=5, anchor="w", padx=10)
 
-input_patente_visita = tk.Entry(frame_formulario_visita, font=("Arial", 14))
-input_patente_visita.pack(pady=10, anchor="w", padx=10)
+# input_patente_visita = tk.Entry(frame_formulario_visita, font=("Arial", 14))
+# input_patente_visita.pack(pady=10, anchor="w", padx=10)
 
-etiqueta_formulario_rut = tk.Label(frame_formulario_visita, text="RUT Visita: ", font=("Arial", 14), bg="gray83", fg="#4B0082")
-etiqueta_formulario_rut.pack(pady=5, anchor="w", padx=10)
+# etiqueta_formulario_rut = tk.Label(frame_formulario_visita, text="RUT Visita: ", font=("Arial", 14), bg="gray83", fg="#4B0082")
+# etiqueta_formulario_rut.pack(pady=5, anchor="w", padx=10)
 
-input_rut_visita = tk.Entry(frame_formulario_visita, font=("Arial", 14))
-input_rut_visita.pack(pady=5, anchor="w", padx=10)
+# input_rut_visita = tk.Entry(frame_formulario_visita, font=("Arial", 14))
+# input_rut_visita.pack(pady=5, anchor="w", padx=10)
 
-etiqueta_formulario_dv = tk.Label(frame_formulario_visita, text="Dígito Verificador Visita: ", font=("Arial", 14), bg="gray83", fg="#4B0082")
-etiqueta_formulario_dv.pack(pady=5, anchor="w", padx=10)
+# etiqueta_formulario_dv = tk.Label(frame_formulario_visita, text="Dígito Verificador Visita: ", font=("Arial", 14), bg="gray83", fg="#4B0082")
+# etiqueta_formulario_dv.pack(pady=5, anchor="w", padx=10)
 
-input_dv_visita = tk.Entry(frame_formulario_visita, font=("Arial", 14))
-input_dv_visita.pack(pady=5, anchor="w", padx=10)
+# input_dv_visita = tk.Entry(frame_formulario_visita, font=("Arial", 14))
+# input_dv_visita.pack(pady=5, anchor="w", padx=10)
 
-etiqueta_formulario_nombre = tk.Label(frame_formulario_visita, text="Nombre Visita: ", font=("Arial", 14), bg="gray83", fg="#4B0082")
-etiqueta_formulario_nombre.pack(pady=5, anchor="w", padx=10)
+# etiqueta_formulario_nombre = tk.Label(frame_formulario_visita, text="Nombre Visita: ", font=("Arial", 14), bg="gray83", fg="#4B0082")
+# etiqueta_formulario_nombre.pack(pady=5, anchor="w", padx=10)
 
-input_nombre_visita = tk.Entry(frame_formulario_visita, font=("Arial", 14))
-input_nombre_visita.pack(pady=5, anchor="w", padx=10)
+# input_nombre_visita = tk.Entry(frame_formulario_visita, font=("Arial", 14))
+# input_nombre_visita.pack(pady=5, anchor="w", padx=10)
 
-etiqueta_formulario_apellido = tk.Label(frame_formulario_visita, text="Apellido Visita: ", font=("Arial", 14), bg="gray83", fg="#4B0082")
-etiqueta_formulario_apellido.pack(pady=5, anchor="w", padx=10)
+# etiqueta_formulario_apellido = tk.Label(frame_formulario_visita, text="Apellido Visita: ", font=("Arial", 14), bg="gray83", fg="#4B0082")
+# etiqueta_formulario_apellido.pack(pady=5, anchor="w", padx=10)
 
-input_apellido_visita = tk.Entry(frame_formulario_visita, font=("Arial", 14))
-input_apellido_visita.pack(pady=5, anchor="w", padx=10)
+# input_apellido_visita = tk.Entry(frame_formulario_visita, font=("Arial", 14))
+# input_apellido_visita.pack(pady=5, anchor="w", padx=10)
 
-etiqueta_formulario_no_depto = tk.Label(frame_formulario_visita, text="Nro Depto Residente: ", font=("Arial", 14), bg="gray83", fg="#4B0082")
-etiqueta_formulario_no_depto.pack(pady=5, anchor="w", padx=10)
+# etiqueta_formulario_no_depto = tk.Label(frame_formulario_visita, text="Nro Depto Residente: ", font=("Arial", 14), bg="gray83", fg="#4B0082")
+# etiqueta_formulario_no_depto.pack(pady=5, anchor="w", padx=10)
 
-etiqueta_rut_ = tk.Label(frame_formulario_visita, text="Nro Depto Residente: ", font=("Arial", 14), bg="gray83", fg="#4B0082")
-etiqueta_rut_.pack(pady=5, anchor="w", padx=10)
+# etiqueta_rut_ = tk.Label(frame_formulario_visita, text="Nro Depto Residente: ", font=("Arial", 14), bg="gray83", fg="#4B0082")
+# etiqueta_rut_.pack(pady=5, anchor="w", padx=10)
 
-input_no_depto_dueno = tk.Entry(frame_formulario_visita, font=("Arial", 14))
-input_no_depto_dueno.pack(pady=5, anchor="w", padx=10)
+# input_no_depto_dueno = tk.Entry(frame_formulario_visita, font=("Arial", 14))
+# input_no_depto_dueno.pack(pady=5, anchor="w", padx=10)
 
-boton_guardar_visita = tk.Button(frame_formulario_visita, text="Guardar Visita", command=guardar_visita, font=("Arial", 14), bg="green", fg="white", width=15, height=2)
-boton_guardar_visita.pack(pady=12)
-boton_guardar_visita.place(relx=0.08, rely=0.82)
+# boton_guardar_visita = tk.Button(frame_formulario_visita, text="Guardar Visita", command=guardar_visita, font=("Arial", 14), bg="green", fg="white", width=15, height=2)
+# boton_guardar_visita.pack(pady=12)
+# boton_guardar_visita.place(relx=0.08, rely=0.82)
 
 
 boton_volver = tk.Button(frame_formulario_visita, text="Volver", command=volver, font=("Arial", 14), bg="green", fg="white", width=15, height=2)
@@ -689,11 +705,26 @@ boton_volver.pack(pady=14)
 boton_volver.place(relx=0.85, rely=0.86)
 
 # Crear el botón "Volver" que aparece cuando se está en el formulario de visita
-boton_volver = tk.Button(frame_formulario_visita, text="Volver", command=volver, font=("Arial", 14), bg="red", fg="white", width=15, height=2)
-boton_volver.place_forget()  # Se inicia oculto
+# boton_volver = tk.Button(frame_formulario_visita, text="Volver", command=volver, font=("Arial", 14), bg="red", fg="white", width=15, height=2)
+# boton_volver.place_forget()  # Se inicia oculto
 
 # Botón para registrar visita fuera del frame de datos del residente
-boton_registrar_visita = tk.Button(ventana, text="Registrar Visita", command=mostrar_formulario_visita, font=("Arial", 18), bg="blue", fg="white", width=20, height=2)
+# Crear el botón "Registrar Visita" con CustomTkinter
+boton_registrar_visita = ctk.CTkButton(
+    ventana, 
+    text="Registrar Visita", 
+    command=mostrar_formulario_visita, 
+    font=("Arial", 18),  # Fuente grande para texto visible
+    corner_radius=12,   # Bordes redondeados para un diseño más moderno
+    fg_color="#28a745", # Color de fondo verde (verde brillante)
+    bg_color="#2897cb",
+    text_color="white",   # Color de texto blanco
+    hover_color="#218838", # Color verde más oscuro al pasar el mouse
+    width=200,          # Establecer un ancho fijo
+    height=60,          # Establecer una altura fija
+    border_width=3,     # Definir grosor del borde
+    border_color="#218838" # Color del borde verde oscuro
+)
 boton_registrar_visita.place(relx=0.10, rely=0.77)
 
 
@@ -706,58 +737,140 @@ estacionamientos_frame = tk.Frame(ventana, bg="#009cd8")
 estacionamientos_frame.place(relx=0.45, rely=0.7, relwidth=0.42, relheight=0.15)
 
 
-# Crear el frame para el formulario de visita (oculto inicialmente)
-frame_formulario_visita = tk.Frame(ventana, bg="gray83", relief="solid", bd=2)
+# # Crear el frame para el formulario de visita (oculto inicialmente)
+# frame_formulario_visita = tk.Frame(ventana, bg="gray83", relief="solid", bd=2)
+
+# # Etiqueta y campo para patente visita
+# etiqueta_formulario_patente = tk.Label(frame_formulario_visita, text="Patente Visita:", font=("Arial", 12), bg="gray83", fg="#4B0082")
+# etiqueta_formulario_patente.grid(row=0, column=0, padx=10, pady=5, sticky="w")
+# input_patente_visita = tk.Entry(frame_formulario_visita, font=("Arial", 12))
+# input_patente_visita.grid(row=0, column=1, padx=10, pady=5)
+
+# # Etiqueta y campo para RUT visita
+# etiqueta_formulario_rut = tk.Label(frame_formulario_visita, text="RUT Visita:", font=("Arial", 12), bg="gray83", fg="#4B0082")
+# etiqueta_formulario_rut.grid(row=1, column=0, padx=10, pady=5, sticky="w")
+# input_rut_visita = tk.Entry(frame_formulario_visita, font=("Arial", 12))
+# input_rut_visita.grid(row=1, column=1, padx=10, pady=5)
+
+# # Etiqueta y campo para dígito verificador
+# etiqueta_formulario_dv = tk.Label(frame_formulario_visita, text="DV Visita:", font=("Arial", 12), bg="gray83", fg="#4B0082")
+# etiqueta_formulario_dv.grid(row=2, column=0, padx=10, pady=5, sticky="w")
+# input_dv_visita = tk.Entry(frame_formulario_visita, font=("Arial", 12))
+# input_dv_visita.grid(row=2, column=1, padx=10, pady=5)
+
+# # Etiqueta y campo para nombre visita
+# etiqueta_formulario_nombre = tk.Label(frame_formulario_visita, text="Nombre Visita:", font=("Arial", 12), bg="gray83", fg="#4B0082")
+# etiqueta_formulario_nombre.grid(row=3, column=0, padx=10, pady=5, sticky="w")
+# input_nombre_visita = tk.Entry(frame_formulario_visita, font=("Arial", 12))
+# input_nombre_visita.grid(row=3, column=1, padx=10, pady=5)
+
+# # Etiqueta y campo para apellido visita
+# etiqueta_formulario_apellido = tk.Label(frame_formulario_visita, text="Apellido Visita:", font=("Arial", 12), bg="gray83", fg="#4B0082")
+# etiqueta_formulario_apellido.grid(row=4, column=0, padx=10, pady=5, sticky="w")
+# input_apellido_visita = tk.Entry(frame_formulario_visita, font=("Arial", 12))
+# input_apellido_visita.grid(row=4, column=1, padx=10, pady=5)
+
+# # Etiqueta y campo para número de departamento
+# etiqueta_formulario_no_depto = tk.Label(frame_formulario_visita, text="Nro Depto:", font=("Arial", 12), bg="gray83", fg="#4B0082")
+# etiqueta_formulario_no_depto.grid(row=5, column=0, padx=10, pady=5, sticky="w")
+# input_no_depto_dueno = tk.Entry(frame_formulario_visita, font=("Arial", 12))
+# input_no_depto_dueno.grid(row=5, column=1, padx=10, pady=5)
+
+# # Combobox para seleccionar el estacionamiento
+# etiqueta_estacionamiento = tk.Label(frame_formulario_visita, text="Estacionamiento:", font=("Arial", 12), bg="gray83", fg="#4B0082")
+# etiqueta_estacionamiento.grid(row=6, column=0, padx=10, pady=5, sticky="w")
+
+# # Crear un ComboBox con los estacionamientos disponibles
+# estacionamientos_disponibles = ["1", "2", "3"]
+# combo_estacionamiento = ttk.Combobox(frame_formulario_visita, values=estacionamientos_disponibles, font=("Arial", 12))
+# combo_estacionamiento.grid(row=6, column=1, padx=10, pady=5)
+# combo_estacionamiento.set("Seleccionar")  # Establecer un valor predeterminado
+# Crear el frame para el formulario de visita
+frame_formulario_visita = ctk.CTkFrame(ventana, fg_color="#fff59d", border_width=2, border_color="#4B0082")
+frame_formulario_visita.pack(padx=20, pady=20, fill="both", expand=True)
+
+# Título del formulario
+titulo_formulario = ctk.CTkLabel(frame_formulario_visita, text="Formulario Agregar Visita", font=("Arial", 20, "bold"), text_color="#4B0082")
+titulo_formulario.grid(row=0, column=0, columnspan=2, pady=10)
 
 # Etiqueta y campo para patente visita
-etiqueta_formulario_patente = tk.Label(frame_formulario_visita, text="Patente Visita:", font=("Arial", 12), bg="gray83", fg="#4B0082")
-etiqueta_formulario_patente.grid(row=0, column=0, padx=10, pady=5, sticky="w")
-input_patente_visita = tk.Entry(frame_formulario_visita, font=("Arial", 12))
-input_patente_visita.grid(row=0, column=1, padx=10, pady=5)
+etiqueta_formulario_patente = ctk.CTkLabel(frame_formulario_visita, text="Patente Visita:", font=("Arial", 16), text_color="#4B0082")
+etiqueta_formulario_patente.grid(row=1, column=0, padx=10, pady=10, sticky="w")
+input_patente_visita = ctk.CTkEntry(frame_formulario_visita, font=("Arial", 16), width=300)  # Aumentamos el tamaño de la caja de texto
+input_patente_visita.grid(row=1, column=1, padx=10, pady=10)
 
 # Etiqueta y campo para RUT visita
-etiqueta_formulario_rut = tk.Label(frame_formulario_visita, text="RUT Visita:", font=("Arial", 12), bg="gray83", fg="#4B0082")
-etiqueta_formulario_rut.grid(row=1, column=0, padx=10, pady=5, sticky="w")
-input_rut_visita = tk.Entry(frame_formulario_visita, font=("Arial", 12))
-input_rut_visita.grid(row=1, column=1, padx=10, pady=5)
+etiqueta_formulario_rut = ctk.CTkLabel(frame_formulario_visita, text="RUT Visita:", font=("Arial", 16), text_color="#4B0082")
+etiqueta_formulario_rut.grid(row=2, column=0, padx=10, pady=10, sticky="w")
+input_rut_visita = ctk.CTkEntry(frame_formulario_visita, font=("Arial", 16), width=300)
+input_rut_visita.grid(row=2, column=1, padx=10, pady=10)
 
 # Etiqueta y campo para dígito verificador
-etiqueta_formulario_dv = tk.Label(frame_formulario_visita, text="DV Visita:", font=("Arial", 12), bg="gray83", fg="#4B0082")
-etiqueta_formulario_dv.grid(row=2, column=0, padx=10, pady=5, sticky="w")
-input_dv_visita = tk.Entry(frame_formulario_visita, font=("Arial", 12))
-input_dv_visita.grid(row=2, column=1, padx=10, pady=5)
+etiqueta_formulario_dv = ctk.CTkLabel(frame_formulario_visita, text="DV Visita:", font=("Arial", 16), text_color="#4B0082")
+etiqueta_formulario_dv.grid(row=3, column=0, padx=10, pady=10, sticky="w")
+input_dv_visita = ctk.CTkEntry(frame_formulario_visita, font=("Arial", 16), width=300)
+input_dv_visita.grid(row=3, column=1, padx=10, pady=10)
 
 # Etiqueta y campo para nombre visita
-etiqueta_formulario_nombre = tk.Label(frame_formulario_visita, text="Nombre Visita:", font=("Arial", 12), bg="gray83", fg="#4B0082")
-etiqueta_formulario_nombre.grid(row=3, column=0, padx=10, pady=5, sticky="w")
-input_nombre_visita = tk.Entry(frame_formulario_visita, font=("Arial", 12))
-input_nombre_visita.grid(row=3, column=1, padx=10, pady=5)
+etiqueta_formulario_nombre = ctk.CTkLabel(frame_formulario_visita, text="Nombre Visita:", font=("Arial", 16), text_color="#4B0082")
+etiqueta_formulario_nombre.grid(row=4, column=0, padx=10, pady=10, sticky="w")
+input_nombre_visita = ctk.CTkEntry(frame_formulario_visita, font=("Arial", 16), width=300)
+input_nombre_visita.grid(row=4, column=1, padx=10, pady=10)
 
 # Etiqueta y campo para apellido visita
-etiqueta_formulario_apellido = tk.Label(frame_formulario_visita, text="Apellido Visita:", font=("Arial", 12), bg="gray83", fg="#4B0082")
-etiqueta_formulario_apellido.grid(row=4, column=0, padx=10, pady=5, sticky="w")
-input_apellido_visita = tk.Entry(frame_formulario_visita, font=("Arial", 12))
-input_apellido_visita.grid(row=4, column=1, padx=10, pady=5)
+etiqueta_formulario_apellido = ctk.CTkLabel(frame_formulario_visita, text="Apellido Visita:", font=("Arial", 16), text_color="#4B0082")
+etiqueta_formulario_apellido.grid(row=5, column=0, padx=10, pady=10, sticky="w")
+input_apellido_visita = ctk.CTkEntry(frame_formulario_visita, font=("Arial", 16), width=300)
+input_apellido_visita.grid(row=5, column=1, padx=10, pady=10)
 
 # Etiqueta y campo para número de departamento
-etiqueta_formulario_no_depto = tk.Label(frame_formulario_visita, text="Nro Depto:", font=("Arial", 12), bg="gray83", fg="#4B0082")
-etiqueta_formulario_no_depto.grid(row=5, column=0, padx=10, pady=5, sticky="w")
-input_no_depto_dueno = tk.Entry(frame_formulario_visita, font=("Arial", 12))
-input_no_depto_dueno.grid(row=5, column=1, padx=10, pady=5)
+etiqueta_formulario_no_depto = ctk.CTkLabel(frame_formulario_visita, text="Nro Depto:", font=("Arial", 16), text_color="#4B0082")
+etiqueta_formulario_no_depto.grid(row=6, column=0, padx=10, pady=10, sticky="w")
+input_no_depto_dueno = ctk.CTkEntry(frame_formulario_visita, font=("Arial", 16), width=300)
+input_no_depto_dueno.grid(row=6, column=1, padx=10, pady=10)
 
-# Combobox para seleccionar el estacionamiento
-etiqueta_estacionamiento = tk.Label(frame_formulario_visita, text="Estacionamiento:", font=("Arial", 12), bg="gray83", fg="#4B0082")
-etiqueta_estacionamiento.grid(row=6, column=0, padx=10, pady=5, sticky="w")
+# Etiqueta y campo para estacionamiento
+etiqueta_estacionamiento = ctk.CTkLabel(frame_formulario_visita, text="Estacionamiento:", font=("Arial", 16), text_color="#4B0082")
+etiqueta_estacionamiento.grid(row=7, column=0, padx=10, pady=10, sticky="w")
 
 # Crear un ComboBox con los estacionamientos disponibles
 estacionamientos_disponibles = ["1", "2", "3"]
-combo_estacionamiento = ttk.Combobox(frame_formulario_visita, values=estacionamientos_disponibles, font=("Arial", 12))
-combo_estacionamiento.grid(row=6, column=1, padx=10, pady=5)
+combo_estacionamiento = ctk.CTkComboBox(frame_formulario_visita, values=estacionamientos_disponibles, font=("Arial", 16), width=300)
+combo_estacionamiento.grid(row=7, column=1, padx=10, pady=10)
 combo_estacionamiento.set("Seleccionar")  # Establecer un valor predeterminado
-
 # Botón para guardar la visita
-boton_guardar_visita = tk.Button(frame_formulario_visita, text="Guardar Visita", command=guardar_visita, font=("Arial", 12), bg="green", fg="white", width=15, height=2)
-boton_guardar_visita.grid(row=7, column=0, columnspan=2, pady=15)
+# Crear el botón "Guardar Visita" con CustomTkinter
+boton_guardar_visita = ctk.CTkButton(
+    frame_formulario_visita, 
+    text="Guardar Visita", 
+    command=guardar_visita, 
+    font=("Arial", 14),  # Fuente un poco más grande
+    corner_radius=10,   # Bordes redondeados
+    fg_color="#28a745", # Color verde para el fondo (verde brillante)
+    text_color="white",   # Color de texto blanco
+    hover_color="#218838", # Color verde más oscuro al pasar el mouse
+    width=200,          # Establecer un ancho fijo
+    height=60,          # Establecer una altura fija
+    border_width=3,     # Definir grosor del borde
+    border_color="green" # Color verde para el borde
+)
+
+boton_volver_atras = ctk.CTkButton(
+    frame_formulario_visita, 
+    text="Volver", 
+    command=volver, 
+    font=("Arial", 14),  # Fuente un poco más grande
+    corner_radius=10,   # Bordes redondeados
+    fg_color="#dc3545", # Color verde para el fondo (verde brillante)
+    text_color="white",   # Color de texto blanco
+    hover_color="#c82333", # Color verde más oscuro al pasar el mouse
+    width=200,          # Establecer un ancho fijo
+    height=60,          # Establecer una altura fija
+    border_width=3,     # Definir grosor del borde
+    border_color="#c82333" # Color verde para el borde
+)
+boton_guardar_visita.grid(row=9, column=0, columnspan=2, pady=15)
+boton_volver_atras.grid(row=10, column=0, columnspan=2, pady=15)
 
 boton_guardar_visita = tk.Button(frame_formulario_visita, text="Volver", command=volver, font=("Arial", 12), bg="yellow", fg="black", width=15, height=2)
 boton_guardar_visita.grid(row=9, column=0, columnspan=2, pady=16)
@@ -1012,7 +1125,20 @@ for i in range(3):
 
 
 # Botón para ir al inicio de sesión en la parte superior izquierda
-boton_inicio_sesion = tk.Button(ventana, text="Iniciar sesión", command=ir_a_inicio_sesion, font=("Arial", 16), bg="red", fg="white")
+boton_inicio_sesion = ctk.CTkButton(
+    ventana, 
+    text="Iniciar sesión", 
+    command=ir_a_inicio_sesion, 
+    font=("Arial", 20),  # Cambiar el tamaño de la fuente
+    corner_radius=15,   # Hacer las esquinas más redondeadas
+    fg_color="#007bff", # Color de fondo
+    text_color="white",   # Color de texto blanco
+    hover_color="#0056b3", # Color al pasar el mouse
+    width=200,          # Establecer un ancho fijo
+    height=60,          # Establecer una altura fija
+    border_width=3,     # Definir grosor del borde
+    border_color="blue" # Color del borde
+)
 boton_inicio_sesion.place(relx=0.05, rely=0.05)
 
 # Iniciar la visualización del video

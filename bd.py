@@ -285,6 +285,40 @@ def actualizar_residente(rut, telefono, no_depto):
     finally:
         cursor.close()
         conexion.close()
+def eliminar_registro(rut):
+    conexion = conectar()
+    if conexion:
+        try:
+            cursor = conexion.cursor()
+
+            # Eliminar el vehículo asociado al residente (si existe)
+            query_vehiculo = """
+            DELETE FROM vehiculo
+            WHERE residente_rut_residente = %s;
+            """
+            cursor.execute(query_vehiculo, ((rut),))
+
+            # Eliminar el residente de la tabla residente
+            query_residente = """
+            DELETE FROM residente
+            WHERE rut_residente = %s;
+            """
+            cursor.execute(query_residente, ((rut),))
+
+            # Confirmar cambios
+            conexion.commit()
+
+            # Cerrar cursor
+            cursor.close()
+
+            # Mostrar mensaje de éxito
+            messagebox.showinfo("Éxito", "El registro del residente ha sido eliminado correctamente.")
+
+        except Exception as e:
+            print(f"Error al eliminar residente: {e}")
+            messagebox.showerror("Error", "Hubo un problema al eliminar el registro del residente.")
+        finally:
+            conexion.close()
 
 ###############################################REPORTES
 # Función para establecer la conexión a la base de datos

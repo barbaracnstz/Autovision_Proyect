@@ -96,7 +96,7 @@ def abrir_ventana_reportes():
         messagebox.showinfo("Éxito", "Reporte generado correctamente.")
     # Cargar la imagen de fondo
     fondo_img = Image.open("fondo.png")
-    fondo_img = fondo_img.resize((1600, 920), Image.LANCZOS)  # Cambiar a LANCZOS
+    fondo_img = fondo_img.resize((1570, 800), Image.LANCZOS)  # Cambiar a LANCZOS
     fondo_photo = ImageTk.PhotoImage(fondo_img)
 
     # Crear un label para la imagen de fondo
