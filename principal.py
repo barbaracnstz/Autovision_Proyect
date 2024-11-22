@@ -8,7 +8,6 @@ import psycopg2
 from sort.sort import *
 from util import obtener_auto, leer_patente, crear_csv
 import tkinter as tk
-import random
 from PIL import Image, ImageTk
 import inicio_sesion  # Importa el archivo de inicio de sesión
 from tkinter import ttk
@@ -212,6 +211,15 @@ def volver():
     # Ocultar el botón "Volver"
     boton_volver.place_forget()
 
+    # Restablecer la visualización a su estado inicial
+    restablecer_visualizacion()
+
+    # Actualizar la interfaz de estacionamientos después de guardar la visita
+    actualizar_estacionamientos()
+
+    # Limpiar los campos del formulario
+    limpiar_campos_formulario_visita()
+
     
 def completar_rut_residente():
     no_depto_dueno = input_no_depto_dueno.get()
@@ -226,8 +234,6 @@ def completar_rut_residente():
 
         if resultado:
             rut_residente = resultado[0]
-            input_rut_residente.delete(0, tk.END)
-            input_rut_residente.insert(0, rut_residente)
         else:
             messagebox.showwarning("Depto no encontrado", f"No se encontró un residente asociado al departamento {no_depto_dueno}.")
 
@@ -388,6 +394,26 @@ def mostrar_formulario_visita():
     # Mostrar el botón "Volver" para cerrar el formulario de visita
     boton_volver.place(relx=0.5, rely=0.82)
 
+def capturar_foto_visita():
+    try:
+        # Leer el fotograma actual de la cámara
+        ret, frame = cap.read()
+        if not ret:
+            print("Error al capturar la imagen de la cámara.")
+            return
+
+        # Mostrar la fecha y la hora en el fotograma
+        fecha_hora = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+        (alto_frame, ancho_frame) = frame.shape[:2]
+        cv2.putText(frame, fecha_hora, (ancho_frame - 250, alto_frame - 20), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
+
+        # Guardar la imagen en el directorio del proyecto
+        nombre_archivo = f"fotos_ingreso_visitas/captura_visita_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
+        cv2.imwrite(nombre_archivo, frame)
+
+    except Exception as e:
+        print("Error al capturar la foto de la visita:", e)
+
 def guardar_visita():
     rut_visita = input_rut_visita.get()
     dv_visita = input_dv_visita.get().upper()
@@ -439,15 +465,9 @@ def guardar_visita():
 
         residente_rut_residente = resultado[0]
 
-        # Verificar si la visita es una visita histórica y generar un nuevo RUT si es necesario
         query_historico = "SELECT COUNT(*) FROM visita WHERE rut_visita = %s"
         cursor_db.execute(query_historico, (rut_visita,))
         count = cursor_db.fetchone()[0]
-
-        if count > 0:
-            # Generar un nuevo RUT si el RUT ya existe (para evitar la clave duplicada)
-            rut_visita = str(random.randint(21000000, 21999999))
-            dv_visita = calcular_dv(rut_visita)  # Puedes tener una función para calcular el DV
 
         #Insertar el registro de la visita en la base de datos
         query = """
@@ -460,21 +480,18 @@ def guardar_visita():
         query_update_estacionamiento = "UPDATE estacionamiento SET estado = 'ocupado', id_visita = %s, momento_ingreso = %s WHERE numero_estacionamiento = %s"
         cursor_db.execute(query_update_estacionamiento, (rut_visita, momento_ingreso, estacionamiento_designado))
 
-        # Verificar si la visita ya existe en el histórico y si no, insertarla
-        query_check_historico = "SELECT COUNT(*) FROM visita_historico WHERE rut_visita_historica = %s AND patente_visita_historica = %s"
-        cursor_db.execute(query_check_historico, (rut_visita, patente_visita))
-        historico_count = cursor_db.fetchone()[0]
-
-        if historico_count == 0:
-            # Insertar el registro en la tabla visita_historico
-            query_insert_historico = """
-            INSERT INTO visita_historico (rut_visita_historica, dv_visita_historica, nombre_visita_historica, apellido_visita_historica, no_depto_visita_historica, patente_visita_historica, momento_ingreso_historico, momento_salida_historico, visita_rut_visita, multado)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            """
-            cursor_db.execute(query_insert_historico, (rut_visita, dv_visita, nombre_visita, apellido_visita, no_depto_dueno, patente_visita, momento_ingreso, None, rut_visita, False))
+        # Insertar el registro en la tabla visita_historico
+        query_insert_historico = """
+        INSERT INTO visita_historico (rut_visita_historica, dv_visita_historica, nombre_visita_historica, apellido_visita_historica, no_depto_visita_historica, patente_visita_historica, momento_ingreso_historico, momento_salida_historico, visita_rut_visita, multado)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """
+        cursor_db.execute(query_insert_historico, (rut_visita, dv_visita, nombre_visita, apellido_visita, no_depto_dueno, patente_visita, momento_ingreso, None, rut_visita, False))
 
         conexion_db.commit()
         print(f"Visita registrada: {nombre_visita} {apellido_visita}")
+
+        # Capturar foto después de guardar la visita
+        capturar_foto_visita()
 
         # Ocultar el formulario de visita y volver a mostrar el frame de datos del residente
         frame_formulario_visita.place_forget()
@@ -490,35 +507,23 @@ def guardar_visita():
         limpiar_campos_formulario_visita()
 
         # Programar la alerta para 1 minuto después del registro de la visita (60,000 ms)
-        alerta_un_minuto = ventana.after(60000, mostrar_alerta_un_minuto, nombre_visita, no_depto_dueno, estacionamiento_designado)
+        alerta_un_minuto = ventana.after(13500000, mostrar_alerta_un_minuto, nombre_visita, no_depto_dueno, estacionamiento_designado)
+        alerta_dos_minutos = ventana.after(14400000, mostrar_alerta_dos_minutos, nombre_visita, no_depto_dueno, estacionamiento_designado)
+        alerta_multa = ventana.after(15000000, enviar_alerta_multa, nombre_visita, no_depto_dueno, estacionamiento_designado)
 
         # Guardar la referencia a la alerta programada
         alertas_programadas[estacionamiento_designado] = {
             'un_minuto': alerta_un_minuto,
-            'dos_minutos': None  # Si también tienes una alerta para los dos minutos, puedes guardarla aquí luego
+            'dos_minutos': alerta_dos_minutos,
+            'alerta_multa': alerta_multa,
         }
 
     except psycopg2.DatabaseError as e:
         print("Error al guardar la visita:", e)
         conexion_db.rollback()
-
+    
     # Mostrar nuevamente el botón de registrar visita
     mostrar_boton_registrar_visita()
-
-def calcular_dv(rut):
-    """
-    Calcula el dígito verificador (DV) de un RUT chileno.
-    """
-    rut = list(map(int, reversed(rut)))
-    factors = [2, 3, 4, 5, 6, 7]
-    s = sum([digit * factors[i % len(factors)] for i, digit in enumerate(rut)])
-    remainder = 11 - (s % 11)
-    if remainder == 11:
-        return '0'
-    elif remainder == 10:
-        return 'K'
-    else:
-        return str(remainder)
     
 def limpiar_campos_formulario_visita():
     """
@@ -532,40 +537,6 @@ def limpiar_campos_formulario_visita():
     input_patente_visita.delete(0, tk.END)
     combo_estacionamiento.set("Seleccionar")
 
-
-def enviar_alerta(nombre_visita, no_depto_dueno, estacionamiento_designado):
-    """
-    Muestra una alerta un minuto después de registrar la visita.
-    """
-    messagebox.showwarning(
-        "Alerta de Tiempo",
-        f"A la visita '{nombre_visita}' del departamento '{no_depto_dueno}' ubicada en el estacionamiento '{estacionamiento_designado}', le queda un minuto para retirarse."
-    )
-
-def enviar_alerta_multa(nombre_visita, no_depto_dueno, estacionamiento_designado):
-    """
-    Muestra una alerta dos minutos después de registrar la visita para advertir sobre una posible multa.
-    """
-    messagebox.showwarning(
-        "Alerta de Multa",
-        f"Notificar al residente que si no retira el vehículo en 5 minutos se le cursará una multa equivalente a 1 UTM.\n"
-        f"Visita: '{nombre_visita}' del departamento '{no_depto_dueno}' ubicada en el estacionamiento '{estacionamiento_designado}'."
-    )
-
-def calcular_dv(rut):
-    """
-    Calcula el dígito verificador (DV) de un RUT chileno.
-    """
-    rut = list(map(int, reversed(rut)))
-    factors = [2, 3, 4, 5, 6, 7]
-    s = sum([digit * factors[i % len(factors)] for i, digit in enumerate(rut)])
-    remainder = 11 - (s % 11)
-    if remainder == 11:
-        return '0'
-    elif remainder == 10:
-        return 'K'
-    else:
-        return str(remainder)
 
 # Diccionario para registrar las alertas ya emitidas
 alertas_emitidas = {
@@ -599,20 +570,22 @@ def actualizar_estacionamientos():
                     momento_ingreso = momento_ingreso.replace(tzinfo=None)  # Asegurarnos de que sea naive
                     tiempo_transcurrido = datetime.now() - momento_ingreso
 
-                    # Calcular el tiempo restante (2 minutos = 120 segundos)
-                    tiempo_restante = max(0, 120 - tiempo_transcurrido.total_seconds())
-                    minutos, segundos = divmod(int(tiempo_restante), 60)
+                    # Calcular el tiempo restante (4 horas = 14400 segundos)
+                    tiempo_restante = max(0, 14400 - tiempo_transcurrido.total_seconds())
+                    horas, resto = divmod(int(tiempo_restante), 3600)
+                    minutos, segundos = divmod(resto, 60)
 
                     if tiempo_restante > 0:
                         label_estado.config(text="Ocupado", bg="red")
-                        label_tiempo.config(text=f"Tiempo restante: {minutos}:{segundos:02d}")
+                        label_tiempo.config(text=f"Tiempo restante: {horas}:{minutos:02d}:{segundos:02d}")
 
                     else:
                         # Cambiar el mensaje a Tiempo Excedido si el tiempo restante es cero
-                        tiempo_excedido = tiempo_transcurrido.total_seconds() - 120
-                        minutos_excedidos, segundos_excedidos = divmod(int(tiempo_excedido), 60)
+                        tiempo_excedido = tiempo_transcurrido.total_seconds() - 14400
+                        horas_excedidas, resto_excedido = divmod(int(tiempo_excedido), 3600)
+                        minutos_excedidos, segundos_excedidos = divmod(resto_excedido, 60)
                         label_estado.config(text="Ocupado", bg="red")
-                        label_tiempo.config(text=f"Tiempo Excedido: {minutos_excedidos}:{segundos_excedidos:02d}")
+                        label_tiempo.config(text=f"Tiempo Excedido: {horas_excedidas}:{minutos_excedidos:02d}:{segundos_excedidos:02d}")
 
                 else:
                     # Reiniciar la configuración del estacionamiento cuando esté libre
@@ -679,6 +652,7 @@ etiqueta_fecha.pack(pady=5, anchor="w", padx=10)
 
 etiqueta_rut = tk.Label(frame_datos, text="", font=("Arial", 14), bg="white", fg="#4B0082")
 etiqueta_rut.pack(pady=5, anchor="w", padx=10)
+
 # Crear el frame para el formulario de visita (oculto inicialmente)
 # frame_formulario_visita = tk.Frame(ventana, bg="gray83", relief="solid", bd=2)
 
@@ -724,6 +698,11 @@ etiqueta_rut.pack(pady=5, anchor="w", padx=10)
 # boton_guardar_visita = tk.Button(frame_formulario_visita, text="Guardar Visita", command=guardar_visita, font=("Arial", 14), bg="green", fg="white", width=15, height=2)
 # boton_guardar_visita.pack(pady=12)
 # boton_guardar_visita.place(relx=0.08, rely=0.82)
+
+
+boton_volver = tk.Button(frame_formulario_visita, text="Volver", command=volver, font=("Arial", 14), bg="green", fg="white", width=15, height=2)
+boton_volver.pack(pady=14)
+boton_volver.place(relx=0.85, rely=0.86)
 
 # Crear el botón "Volver" que aparece cuando se está en el formulario de visita
 # boton_volver = tk.Button(frame_formulario_visita, text="Volver", command=volver, font=("Arial", 14), bg="red", fg="white", width=15, height=2)
@@ -893,6 +872,8 @@ boton_volver_atras = ctk.CTkButton(
 boton_guardar_visita.grid(row=9, column=0, columnspan=2, pady=15)
 boton_volver_atras.grid(row=10, column=0, columnspan=2, pady=15)
 
+boton_guardar_visita = tk.Button(frame_formulario_visita, text="Volver", command=volver, font=("Arial", 12), bg="yellow", fg="black", width=15, height=2)
+boton_guardar_visita.grid(row=9, column=0, columnspan=2, pady=16)
 
 
 # Crear el frame para los estacionamientos
@@ -937,21 +918,125 @@ def mostrar_alerta_un_minuto(nombre_visita, no_depto_dueno, numero_estacionamien
 
         # Verificar si el estacionamiento sigue ocupado antes de mostrar la alerta
         if estado and estado[0] == 'ocupado':
-            messagebox.showwarning("Alerta de Tiempo", f"A la visita '{nombre_visita}' del departamento '{no_depto_dueno}' ubicada en el estacionamiento '{numero_estacionamiento}', le queda un minuto para retirarse.")
+            messagebox.showwarning("Alerta de Tiempo", f"A la visita '{nombre_visita}' del departamento '{no_depto_dueno}' ubicada en el estacionamiento '{numero_estacionamiento}', le quedan 15 minutos para retirarse.")
     except psycopg2.DatabaseError as e:
         print("Error al consultar el estado del estacionamiento para la alerta:", e)
 
+def mostrar_alerta_dos_minutos(nombre_visita, no_depto_dueno, numero_estacionamiento):
+    try:
+        # Consultar el estado del estacionamiento para asegurarse de que sigue ocupado
+        query = "SELECT estado FROM estacionamiento WHERE numero_estacionamiento = %s"
+        cursor_db.execute(query, (numero_estacionamiento,))
+        estado = cursor_db.fetchone()
 
+        # Verificar si el estacionamiento sigue ocupado antes de mostrar la alerta
+        if estado and estado[0] == 'ocupado':
+            messagebox.showwarning("Alerta de Tiempo", f"A la visita '{nombre_visita}' del departamento '{no_depto_dueno}' ubicada en el estacionamiento '{numero_estacionamiento}', debe retirarse ahora, de lo contrario se cursara al residente una multa equivalente a 1 UTM")
+    except psycopg2.DatabaseError as e:
+        print("Error al consultar el estado del estacionamiento para la alerta:", e)
 
+def enviar_alerta_multa(nombre_visita, no_depto_dueno, numero_estacionamiento):
+    try:
+        # Consultar el estado del estacionamiento para asegurarse de que sigue ocupado
+        query = "SELECT estado FROM estacionamiento WHERE numero_estacionamiento = %s"
+        cursor_db.execute(query, (numero_estacionamiento,))
+        estado = cursor_db.fetchone()
+
+            # Verificar si el estacionamiento sigue ocupado antes de mostrar la alerta
+        if estado and estado[0] == 'ocupado':
+            messagebox.showwarning("Alerta de Multa",
+        f"Notificar al residente que debido a que su visita no retiro el vehículo se le cursará una multa equivalente a 1 UTM.\n"
+        f"Visita: '{nombre_visita}' del departamento '{no_depto_dueno}' ubicada en el estacionamiento '{numero_estacionamiento}'.")
+    except psycopg2.DatabaseError as e:
+        print("Error al consultar el estado del estacionamiento para la alerta:", e)
 
 # Diccionario para almacenar las referencias de las alertas programadas por estacionamiento
 alertas_programadas = {}
 
 def liberar_estacionamiento_manual(numero_estacionamiento):
     try:
-        # Obtener el momento de salida
+        # Obtener el momento de salida actual
         momento_salida = datetime.now(timezone.utc)
 
+        # Obtener la información del estacionamiento y el momento de ingreso
+        query_select_estacionamiento = """
+        SELECT momento_ingreso, id_visita
+        FROM estacionamiento
+        WHERE numero_estacionamiento = %s
+        """
+        cursor_db.execute(query_select_estacionamiento, (numero_estacionamiento,))
+        resultado = cursor_db.fetchone()
+
+        if not resultado:
+            print(f"No se encontró información del estacionamiento {numero_estacionamiento}.")
+            return
+
+        momento_ingreso, rut_visita = resultado
+
+        if momento_ingreso is None:
+            print(f"Estacionamiento {numero_estacionamiento} está libre, no se requiere liberar.")
+            return
+
+        # Calcular el tiempo de permanencia
+        tiempo_transcurrido = momento_salida - momento_ingreso
+
+        # Si el tiempo excede los 3 minutos, mostrar la ventana emergente
+        if tiempo_transcurrido.total_seconds() > 14700:
+            mostrar_ventana_multa(numero_estacionamiento, rut_visita, momento_salida)
+        else:
+            marcar_salida(numero_estacionamiento, rut_visita, momento_salida, multado=False)
+
+    except psycopg2.DatabaseError as e:
+        print("Error al liberar estacionamiento:", e)
+        conexion_db.rollback()
+
+
+def mostrar_ventana_multa(numero_estacionamiento, rut_visita, momento_salida):
+    # Crear una nueva ventana
+    ventana_multa = tk.Toplevel(ventana)
+    ventana_multa.title("Asignar Multa")
+    ventana_multa.geometry("500x400")
+
+    # Mensaje de advertencia
+    etiqueta_mensaje = tk.Label(
+        ventana_multa,
+        text=f"Se asignará una multa de 1 UTM al residente del departamento asociado a la visita con RUT {rut_visita} debido a que su visita se excedió del tiempo límite.",
+        wraplength=350,
+        font=("Arial", 12)
+    )
+    etiqueta_mensaje.pack(pady=20)
+
+    # Botón para marcar salida con multa
+    boton_multa = tk.Button(
+        ventana_multa,
+        text="Marcar Salida con Multa",
+        font=("Arial", 12),
+        bg="red",
+        fg="white",
+        command=lambda: [
+            marcar_salida(numero_estacionamiento, rut_visita, momento_salida, multado=True),
+            ventana_multa.destroy()
+        ]
+    )
+    boton_multa.pack(side=tk.LEFT, padx=20, pady=20)
+
+    # Botón para marcar salida sin multa
+    boton_sin_multa = tk.Button(
+        ventana_multa,
+        text="Marcar Salida sin Multa",
+        font=("Arial", 12),
+        bg="green",
+        fg="white",
+        command=lambda: [
+            marcar_salida(numero_estacionamiento, rut_visita, momento_salida, multado=False),
+            ventana_multa.destroy()
+        ]
+    )
+    boton_sin_multa.pack(side=tk.RIGHT, padx=20, pady=20)
+
+
+def marcar_salida(numero_estacionamiento, rut_visita, momento_salida, multado):
+    try:
         # Actualizar el estado del estacionamiento en la base de datos y registrar el momento de salida
         query_update_estacionamiento = """
         UPDATE estacionamiento
@@ -968,16 +1053,13 @@ def liberar_estacionamiento_manual(numero_estacionamiento):
         """
         cursor_db.execute(query_update_visita, (momento_salida, numero_estacionamiento))
 
-        # Actualizar el momento de salida en la tabla de visitas históricas
+        # Actualizar el momento de salida y el estado de multa en la tabla de visitas históricas
         query_update_visita_historico = """
         UPDATE visita_historico
-        SET momento_salida_historico = %s
-        WHERE patente_visita_historica = (
-            SELECT patente_visita FROM visita
-            WHERE estacionamiento_designado = %s AND momento_salida = %s
-        )
+        SET momento_salida_historico = %s, multado = %s
+        WHERE visita_rut_visita = %s AND momento_salida_historico IS NULL
         """
-        cursor_db.execute(query_update_visita_historico, (momento_salida, numero_estacionamiento, momento_salida))
+        cursor_db.execute(query_update_visita_historico, (momento_salida, multado, rut_visita))
 
         # Confirmar los cambios en la base de datos
         conexion_db.commit()
@@ -988,6 +1070,8 @@ def liberar_estacionamiento_manual(numero_estacionamiento):
                 ventana.after_cancel(alertas_programadas[numero_estacionamiento]['un_minuto'])
             if alertas_programadas[numero_estacionamiento]['dos_minutos']:
                 ventana.after_cancel(alertas_programadas[numero_estacionamiento]['dos_minutos'])
+            if alertas_programadas[numero_estacionamiento]['alerta_multa']:
+                ventana.after_cancel(alertas_programadas[numero_estacionamiento]['alerta_multa'])
 
             # Eliminar la referencia de las alertas canceladas
             del alertas_programadas[numero_estacionamiento]
@@ -998,12 +1082,12 @@ def liberar_estacionamiento_manual(numero_estacionamiento):
         # Actualizar el ComboBox de estacionamientos disponibles en el formulario de registro
         actualizar_estacionamientos_disponibles()
 
-        print(f"Estacionamiento {numero_estacionamiento} liberado.")
+        # Mensaje de confirmación
+        print(f"Estacionamiento {numero_estacionamiento} liberado. Multado: {'Sí' if multado else 'No'}.")
 
     except psycopg2.DatabaseError as e:
         print("Error al liberar estacionamiento:", e)
         conexion_db.rollback()
-
 
 
 # Crear el frame para los estacionamientos
