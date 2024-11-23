@@ -1,9 +1,8 @@
 import tkinter as tk
 from tkinter import messagebox
-# from bd import conectar, cargar_datos, insertar_residente, editar_residente
 from menu import crear_menu
-from bd import conectar,cargar_datos, ejecutar_consulta, insertar_residente, actualizar_residente, obtener_residente_por_rut,eliminar_registro
-#, obtener_residente_por_rut, actualizar_residente, eliminar_residente
+from bd import conectar,cargar_datos, ejecutar_consulta, insertar_residente, actualizar_residente, obtener_residente_por_rut
+from bd import eliminar_residente
 from tkcalendar import DateEntry
 import customtkinter as ctk
 from PIL import Image, ImageTk
@@ -474,6 +473,30 @@ def abrir_ventana_residentes():
                                     fg_color="#007bff", hover_color="#0056b3", font=("Arial", 12, "bold"),text_color="white")
         btn_guardar.grid(row=8, column=0, columnspan=2, pady=10)
 
+    def eliminar_residente_con_confirmacion(rut):
+        """
+        Pregunta al usuario si desea eliminar al residente y procede a eliminarlo.
+        """
+        # Asegúrate de que esta función no se llame a sí misma y que 'messagebox' esté disponible.
+        respuesta = messagebox.askyesno(
+            "Confirmar Eliminación", 
+            f"¿Estás seguro de que deseas eliminar al residente con RUT {rut}?"
+        )
+        
+        if respuesta:  # Si el usuario selecciona "Sí"
+            try:
+                # Llama a la función que interactúa con la base de datos
+                eliminado = eliminar_residente(rut)  # Supongamos que esta función elimina en la BD
+                if eliminado:
+                    messagebox.showinfo("Éxito", "Residente eliminado correctamente.")
+                    cargar_datos_tabla()  # Recarga la tabla de datos
+                else:
+                    messagebox.showerror("Error", "No se pudo eliminar al residente.")
+            except Exception as e:
+                messagebox.showerror("Error", f"Se produjo un error al eliminar al residente: {e}")
+        else:  # Si el usuario selecciona "No"
+            cargar_datos_tabla()  # Simplemente recarga la vista sin realizar cambios
+
 
 
     # Crear botón "Agregar residente"
@@ -500,7 +523,6 @@ def abrir_ventana_residentes():
 
     # Asociar la tecla de búsqueda con la función para actualizar
     entry_buscar.bind("<KeyRelease>", actualizar_busqueda)  # Actualiza la búsqueda al presionar una tecla
-
     # Función para cargar datos en la tabla con paginación y búsqueda
     def cargar_datos_tabla():
         # Limpiar la tabla antes de cargar nuevos datos
@@ -537,12 +559,13 @@ def abrir_ventana_residentes():
 
 
             # Botón ELIMINAR
-            btn_eliminar = tk.Button(frame_tabla, text="ELIMINAR", bg="red", fg="white", command=lambda rut=registro[0]: eliminar_registro(rut))
+            btn_eliminar = tk.Button(frame_tabla, text="ELIMINAR", bg="red", fg="white", command=lambda rut=registro[0]: eliminar_residente_con_confirmacion(rut))
             btn_eliminar.grid(row=row_num, column=6, sticky="nsew")
 
         # Actualizar botones de paginación
         actualizar_botones_paginacion(len(registros))
 
+    
     # Función para actualizar los botones de paginación
     def actualizar_botones_paginacion(total_registros):
         # Verificar si hay una página anterior
