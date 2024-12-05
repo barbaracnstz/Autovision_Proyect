@@ -1,110 +1,40 @@
 import tkinter as tk
-from tkinter import font
+from tkinter import font, ttk
+from menu import crear_menu
 import psycopg2
 from bd import conectar
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from PIL import Image, ImageTk
-from menu import crear_menu
-from tkinter import ttk
-
 
 def abrir_ventana_administrador():
     ventana_administrador = tk.Toplevel()
-    ventana_administrador.title("Dashboard - Administrador")    
+    ventana_administrador.title("Dashboard - Administrador")
     
-    # Obtener el tamaño de la pantalla y ajustar la ventana
+    # Configuración de la ventana
+    ventana_administrador.configure(bg="#212f3d")
     ancho_ventana = ventana_administrador.winfo_screenwidth()
     alto_ventana = ventana_administrador.winfo_screenheight()
     ventana_administrador.geometry(f"{ancho_ventana}x{alto_ventana}+0+0")
-    
-    # Fuente para las tarjetas
-    card_font = font.Font(family="Arial", size=16, weight="bold")
-    
-    # Cargar la imagen de fondo
-    fondo_img = Image.open("fondoform.png")
-    fondo_img = fondo_img.resize((1670, 800), Image.LANCZOS)  # Cambiar a LANCZOS
-    fondo_photo = ImageTk.PhotoImage(fondo_img)
-
-    # Crear un label para la imagen de fondo
-    label_fondo = tk.Label(ventana_administrador, image=fondo_photo)
-    label_fondo.place(relwidth=1, relheight=1)  # Ajustar a todo el fondo
-
-    # Menu
+    # Crear el menú
     crear_menu(ventana_administrador)
-    
+    # Fuente para tarjetas y textos
+    card_font = font.Font(family="Arial", size=20, weight="bold")
+    title_font = font.Font(family="Arial", size=16, weight="bold")
+
     # Conectar a la base de datos
     conexion = conectar()
     cursor = conexion.cursor()
 
-    # Obtener el total de residentes
+    # Consultas de la base de datos
     cursor.execute("SELECT COUNT(*) FROM residente;")
     total_residentes = cursor.fetchone()[0]
 
-    # Obtener el total de vehiculos
-    cursor.execute("SELECT COUNT(*) FROM vehiculo;")
-    total_vehiculo = cursor.fetchone()[0]
-
-    # Obtener la cantidad de visitas actuales
     cursor.execute("SELECT COUNT(*) FROM visita WHERE momento_salida IS NULL;")
     visitas_actuales = cursor.fetchone()[0]
 
-    # Consulta SQL para contar las visitas multadas
-    cursor.execute("SELECT COUNT(*) FROM visita_historico WHERE multado = true")
-    total_multadas = cursor.fetchone()[0]   
-    
-    # Consulta SQL para obtener el top 3 de visitantes más frecuentes
-    cursor.execute("""
-            SELECT rut_visita_historica, nombre_visita_historica, apellido_visita_historica, COUNT(*) AS total_visitas
-            FROM visita_historico
-            GROUP BY rut_visita_historica, nombre_visita_historica, apellido_visita_historica
-            ORDER BY total_visitas DESC
-            LIMIT 3
-    """)
-    resultados = cursor.fetchall()  # Obtener todos los resultados
+    cursor.execute("SELECT COUNT(*) FROM visita_historico WHERE multado = true;")
+    total_multadas = cursor.fetchone()[0]
 
-    # Crear tarjetas de estadísticas
-    lbl_residentes = tk.Label(ventana_administrador, text=f"Total Residentes: {total_residentes}", font=card_font, bg="#4db6ac", fg="white", padx=20, pady=10)
-    lbl_residentes.pack(pady=10)
-
-    lbl_visitas_actuales = tk.Label(ventana_administrador, text=f"Visitas Actuales: {visitas_actuales}", font=card_font, bg="#4db6ac", fg="white", padx=20, pady=10)
-    lbl_visitas_actuales.pack(pady=10)
-
-    lbl_vehiculos = tk.Label(ventana_administrador, text=f"Total vehiculos: {total_vehiculo}", font=card_font, bg="#4db6ac", fg="white", padx=20, pady=10)
-    lbl_vehiculos.pack(pady=10)
-
-    lbl_multadas = tk.Label(ventana_administrador, text=f"Total visitas multadas: {total_multadas}", font=card_font, bg="#4db6ac", fg="white", padx=20, pady=10)
-    lbl_multadas.pack(pady=10)
-
-    # Título de la ventana para el Top 3 de visitantes
-    titulo_label = tk.Label(ventana_administrador, text="Top 3 Visitantes Más Frecuentes", font=("Arial", 14), bg="#4db6ac", fg="white")
-    titulo_label.place(x=200, y=60)  # Posiciona el título en (400, 10)
-
-    # Crear la tabla para mostrar los resultados del top 3
-    tabla = ttk.Treeview(ventana_administrador, columns=("Rut", "Nombre", "Apellido", "Total Visitas"), show="headings")
-    tabla.heading("Rut", text="Rut")
-    tabla.heading("Nombre", text="Nombre")
-    tabla.heading("Apellido", text="Apellido")
-    tabla.heading("Total Visitas", text="Total Visitas")
-
-    # Configurar el tamaño de las columnas
-    tabla.column("Rut", width=100, anchor="center")
-    tabla.column("Nombre", width=150, anchor="center")
-    tabla.column("Apellido", width=150, anchor="center")
-    tabla.column("Total Visitas", width=120, anchor="center")
-
-    # Ejemplo de datos
-    resultados = [("12345678-9", "Juan", "Pérez", 10),
-                ("98765432-1", "Ana", "López", 8),
-                ("11223344-5", "Carlos", "Gómez", 6)]
-
-    # Insertar los datos en la tabla
-    for visitante in resultados:
-        tabla.insert("", "end", values=visitante)
-
-    # Posicionar la tabla en una posición manual
-    tabla.place(x=60, y=100, width=500, height=200)
-    # Obtener datos para el gráfico
     cursor.execute("""
         SELECT no_depto_dueno, COUNT(*) as cantidad_visitas 
         FROM visita 
@@ -114,20 +44,91 @@ def abrir_ventana_administrador():
     """)
     departamentos, visitas = zip(*cursor.fetchall())
 
-    # Crear el gráfico de barras
-    fig, ax = plt.subplots()
-    ax.bar(departamentos, visitas, color="#4db6ac")
-    ax.set_xlabel("Número de Departamento")
-    ax.set_ylabel("Cantidad de Visitas")
-    ax.set_title("Departamentos con Más Visitas")
+    cursor.execute("""
+        SELECT multado, COUNT(*) FROM visita_historico
+        GROUP BY multado;
+    """)
+    multado_data = cursor.fetchall()
+    estados = ["True" if row[0] else "False" for row in multado_data]
+    porcentajes = [row[1] for row in multado_data]
 
-    # Mostrar el gráfico en tkinter
-    chart = FigureCanvasTkAgg(fig, ventana_administrador)
-    chart.get_tk_widget().pack(pady=20)
+    # Crear tarjetas de estadísticas
+    tarjetas_info = [
+        (f"Total Residentes: {total_residentes}", 150),
+        (f"Visitas Actuales: {visitas_actuales}", 250),
+        (f"Total Visitas Multadas: {total_multadas}", 350),
+    ]
+    for texto, y in tarjetas_info:
+        tk.Label(
+            ventana_administrador, text=texto, font=card_font, bg="#34495e", fg="white",
+            padx=20, pady=20, width=25, anchor="w"
+        ).place(x=30, y=y)
+
+    # Gráfico 1: Departamentos más visitados
+    fig1, ax1 = plt.subplots(figsize=(4, 4), dpi=100)
+    ax1.pie(visitas, labels=departamentos, autopct='%1.1f%%', startangle=90, colors=plt.cm.Paired.colors)
+    ax1.set_title("Departamentos Más Visitados", fontsize=16, color="white")
+    fig1.patch.set_facecolor("#212f3d")
+    chart1 = FigureCanvasTkAgg(fig1, ventana_administrador)
+    chart1.get_tk_widget().place(x=600, y=150)
+
+    # Gráfico 2: Porcentaje de multas
+    fig2, ax2 = plt.subplots(figsize=(4, 4), dpi=100)
+    ax2.pie(porcentajes, labels=estados, autopct='%1.1f%%', startangle=90, colors=plt.cm.Paired.colors)
+    ax2.set_title("Porcentaje de Multas (True/False)", fontsize=12, color="white")
+    ax2.tick_params(colors="white") 
+    fig2.patch.set_facecolor("#212f3d")
+    chart2 = FigureCanvasTkAgg(fig2, ventana_administrador)
+    chart2.get_tk_widget().place(x=1000, y=150)
+    
+    # Título para la tabla
+    tk.Label(
+        ventana_administrador, text="Top 3 visitantes más frecuentes", font=title_font, bg="#212f3d", fg="white"
+    ).place(x=500, y=530)
+
+    # Tabla del Top 3 visitantes más frecuentes
+    cursor.execute("""
+        SELECT rut_visita_historica, nombre_visita_historica, apellido_visita_historica, COUNT(*) AS total_visitas
+        FROM visita_historico
+        GROUP BY rut_visita_historica, nombre_visita_historica, apellido_visita_historica
+        ORDER BY total_visitas DESC
+        LIMIT 3;
+    """)
+    resultados = cursor.fetchall()
+    # Estilo personalizado para la tabla
+    estilo_tabla = ttk.Style()
+    estilo_tabla.configure(
+        "Treeview", 
+        font=("Arial", 14),              # Fuente y tamaño para las filas
+    )
+    estilo_tabla.configure(
+        "Treeview.Heading", 
+        font=("Arial", 16, "bold"),     # Fuente y tamaño para los encabezados
+    )
+    estilo_tabla.map(
+        "Treeview", 
+        background=[("selected", "#2c3e50")],  # Fondo para las filas seleccionadas
+        foreground=[("selected", "white")]    # Texto para las filas seleccionadas
+    )
+
+    tabla = ttk.Treeview(ventana_administrador, columns=("Rut", "Nombre", "Apellido", "Total Visitas"), show="headings")
+    tabla.heading("Rut", text="Rut")
+    tabla.heading("Nombre", text="Nombre")
+    tabla.heading("Apellido", text="Apellido")
+    tabla.heading("Total Visitas", text="Total Visitas")
+    tabla.column("Rut", anchor="center", width=100)
+    tabla.column("Nombre", anchor="center", width=150)
+    tabla.column("Apellido", anchor="center", width=150)
+    tabla.column("Total Visitas", anchor="center", width=120)
+
+    for fila in resultados:
+        tabla.insert("", "end", values=fila)
+
+    tabla.place(x=500, y=580, width=600, height=88)
 
     # Cerrar conexión
     cursor.close()
     conexion.close()
 
-    # Iniciar el loop de la aplicación
+    # Loop de la aplicación
     ventana_administrador.mainloop()
